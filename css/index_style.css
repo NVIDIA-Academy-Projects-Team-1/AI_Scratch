@@ -1,0 +1,162 @@
+body {
+    margin: 0;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+}
+
+/* Layer select button */
+.layer-select {
+    width: 20%;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-layer {
+    float: left; 
+    width: 33.3%;
+    height: 100%;
+    /* padding:5px 20px; */
+    background-color: yellow;
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+.hidden-layer {
+    float: left;
+    width: 33.3%;
+    height: 100%;
+    /* padding:5px 5px; */
+    background-color: green;
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+.run-layer {
+    float: left;
+    width: 33.3%;
+    height: 100%;
+    /* padding:5px 20px; */
+    background-color: salmon;
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+/* Div for containing layer nodes */
+.layer1,
+.layer2,
+.layer3 {
+    width: 100%;
+    height: 100%;
+    float: left;
+    background-color: skyblue;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.input-number {
+    border: 1px solid;
+    border-radius: 5px;
+    width: 100px;
+    height: 50px;
+}
+.input-image {
+    border: 1px solid;
+    border-radius: 5px;
+    width: 200px;
+    height: 100px;
+}
+#att_zone {
+    width: 190px;
+    min-height: 50px;
+    padding: 1px;
+    border: 1px dotted #00f;
+}
+#att_zone:empty:before {
+    content: attr(data-placeholder);
+    color: black;
+    font-size: 12px;
+}
+
+/* Canvas and description */
+.layer-canvas {
+    width: 60%;
+    height: 100vh;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.draw-model {
+    --dot-bg: white;
+    --dot-color: black;
+    --dot-size: 1px;
+    --dot-space: 22px;
+      background:
+          linear-gradient(90deg, var(--dot-bg) calc(var(--dot-space) - var(--dot-size)), transparent 1%) center / var(--dot-space) var(--dot-space),
+          linear-gradient(var(--dot-bg) calc(var(--dot-space) - var(--dot-size)), transparent 1%) center / var(--dot-space) var(--dot-space),
+          var(--dot-color);
+    width: 100%;
+    height: 80%;
+}
+
+.reset {
+    padding: 2px 3px;
+    position: absolute; top:10px; right: 10px;
+}
+
+.layer-description {
+    width: 100%;
+    height: 20%;
+    background-color: aqua;
+    border-radius: 5px;
+    position: relative;
+}
+
+.jb-text {
+    /* padding: 50px 200px; */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+
+/* Output */
+.output {
+    width: 20%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.log-window {
+    width: 100%;
+    height: 70%;
+    background-color: ivory;
+    border-radius: 5px;
+}
+
+.test-window{
+    width: 100%;
+    height: 30%;
+    background-color: beige;
+    border-radius: 5px;
+}
+
+/* Footer */
+.footer {
+    width: 100%;
+    height: 10vh;
+    background-color: white;
+}

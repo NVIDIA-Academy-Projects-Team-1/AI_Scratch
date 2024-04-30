@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<!-- <html lang="en"> -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Scratch</title>
+    <link rel="stylesheet" href="../css/index_style.css">
+    <title>CSS</title>
+</head>
+<body>
+    <script src="scripts/index.js"></script>
+    <script src="scripts/input.js"></script>
+    <script src="scripts/function.js"></script>
+    <script src="scripts/dragdrop.js"></script>
+
+    <div class="container">
+        <div class="layer-select">
+            <div class="select">
+                <button class="input-layer" id="input-layer-button"><img src="/res/input.svg"><br>입력</button>
+                <button class="hidden-layer" id="hidden-layer-button"><img src="/res/layers.svg"><br>모델 쌓기</button>
+                <button class="run-layer" id="run-layer-button"><img src="/res/output.svg"><br>출력</button>
+            </div>
+            <div class="layer1" id="layer-1" style="display: none">
+                <!-- <ul id="input-layers">
+                    <li>
+                        <div class="input-number" id="input-number">
+                            X:<input id = 'x' onkeyup="getnumbers()" size="10"/>
+                            Y:<input id = 'y' onkeyup="getnumbers()" size="10"/>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="input-number" id="input-number">
+                            X:<input id = 'x' onkeyup="getnumbers()" size="10"/>
+                            Y:<input id = 'y' onkeyup="getnumbers()" size="10"/>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="input-image" id="input-image">
+                            Image:<input type="file" id='btnAtt' accept="image/*" multiple="multiple"/>
+                            <div id="att_zone" data-placeholder="파일을 첨부 하려면 [파일 선택] 버튼을 클릭하거나 파일을 끌어와 놓으세요"></div>
+                        </div>
+                    </li>
+                </ul> -->
+
+
+                <div class="input-number" id="input-number">
+                    X:<input id = 'x' onkeyup="getnumbers()" size="10"/>
+                    Y:<input id = 'y' onkeyup="getnumbers()" size="10"/>
+                </div>
+                <div class="input-number" id="input-number">
+                    X:<input id = 'x' onkeyup="getnumbers()" size="10"/>
+                    Y:<input id = 'y' onkeyup="getnumbers()" size="10"/>
+                </div>
+                <div class="input-image" id="input-image">
+                    Image:<input type="file" id='btnAtt' accept="image/*" multiple="multiple"/>
+                    <div id="att_zone" data-placeholder="파일을 첨부 하려면 [파일 선택] 버튼을 클릭하거나 파일을 끌어와 놓으세요"></div>
+                </div>
+
+            </div>
+            <div class="layer2" id="layer-2" style="display: none">
+                <div>layer nodes</div>
+                <form class="form">
+                    Dense:<input id="units" type='number' placeholder="[예시 : 10]" min="1" max="50"/>
+                    <input id="input_shape" type="text" placeholder="[예시 : (1,0)]" min="(1,0)"/>
+                    <select id="activati">
+                        <option>sigmoid</option>
+                        <option>softmax</option>
+                        <option>relu</option>
+                    </select>
+                    <input type="submit" value="'Submit"/>
+                </form>
+            </div>
+            <div class="layer3" id="layer-3" style="display: none">
+                <div>output nodes</div>
+            </div>
+        </div>
+
+        <div class="layer-canvas">
+            <div class="draw-model" id="model-canvas">
+                <div>test</div>
+            </div>
+            
+            <button class="reset" id="reset"><img src="res/reset.svg" ></button>
+
+            <div class="layer-description">
+                <div class="jb-text" id="jb-text" style="display: none">model is model</div>
+            </div>
+        </div>
+
+        <div class="output">
+            <div class="log-window" id="model-log">this is log window</div>
+            <div class="test-window" id="model-test">this is model test window
+                <p class="jb-title" id="jb-title">model</p>
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="footer">
+    </div>
+    
+</body>
+</html>
+
