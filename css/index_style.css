@@ -8,6 +8,17 @@ ul {
     margin: 0;
 }
 
+.text {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    text-align: center;
+    font-size: small;
+}
+
 .container {
     width: 100%;
     height: 100vh;
@@ -21,40 +32,37 @@ ul {
     flex-direction: column;
 }
 
-.input-layer {
+#input-layer-button {
     float: left; 
     width: 33.3%;
     height: 100%;
-    /* padding:5px 20px; */
     background-color: yellow;
     border-width: 1px;
     border-radius: 5px;
 }
 
-.hidden-layer {
+#hidden-layer-button {
     float: left;
     width: 33.3%;
     height: 100%;
-    /* padding:5px 5px; */
     background-color: green;
     border-width: 1px;
     border-radius: 5px;
 }
 
-.run-layer {
+#run-layer-button {
     float: left;
     width: 33.3%;
     height: 100%;
-    /* padding:5px 20px; */
     background-color: salmon;
     border-width: 1px;
     border-radius: 5px;
 }
 
 /* Div for containing layer nodes */
-.layer1,
-.layer2,
-.layer3 {
+#layer1,
+#layer2,
+#layer3 {
     width: 100%;
     height: 100%;
     float: left;
@@ -63,30 +71,28 @@ ul {
     display: flex;
     flex-direction: column;
     position: relative;
+    text-align: center;
 }
 
-.input-number {
-    border: 1px solid;
-    border-radius: 5px;
-    width: 100px;
-    height: 50px;
-}
-.input-image {
+.node-boxes {
     border: 1px solid;
     border-radius: 5px;
     width: 200px;
     height: 100px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: inline-block;
 }
-#att_zone {
-    width: 190px;
-    min-height: 50px;
-    padding: 1px;
-    border: 1px dotted #00f;
+
+.input-boxes {
+    margin-top: 5px;
+    margin-left: 10px;
 }
-#att_zone:empty:before {
-    content: attr(data-placeholder);
-    color: black;
-    font-size: 12px;
+
+
+.submit-button {
+    margin-top: 40px;
+    margin-left: 10px;
 }
 
 /* Canvas and description */
@@ -99,7 +105,7 @@ ul {
     position: relative;
 }
 
-.draw-model {
+#draw-model {
     --dot-bg: white;
     --dot-color: black;
     --dot-size: 1px;
@@ -112,24 +118,27 @@ ul {
     height: 80%;
 }
 
-.reset {
+#constructModel {
+    width: 300px;
+    height: auto;
+    margin-top: 5%;
+    margin-left: 30%;
+    border: 1px solid;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#reset {
     padding: 2px 3px;
     position: absolute; top:10px; right: 10px;
 }
 
-.layer-description {
+#layer-description {
     width: 100%;
     height: 20%;
     background-color: aqua;
     border-radius: 5px;
     position: relative;
-}
-
-.jb-text {
-    /* padding: 50px 200px; */
-    position: absolute;
-    top: 50%;
-    left: 50%;
 }
 
 /* Output */
@@ -140,19 +149,41 @@ ul {
     flex-direction: column;
 }
 
-.log-window {
+#model-log {
     width: 100%;
     height: 70%;
     background-color: ivory;
     border-radius: 5px;
 }
 
-.test-window{
+#log {
+    padding:10px;
+}
+
+#model-test {
     width: 100%;
     height: 30%;
     background-color: beige;
     border-radius: 5px;
 }
+
+#num-test-button,
+#image-test-button,
+#text-test-button {
+    float: left; 
+    width: 33.3%;
+    height: 100%;
+    background-color: yellow;
+    border-width: 1px;
+    border-radius: 5px;
+}
+
+#num-test-page,
+#image-test-page,
+#text-test-page {
+    text-align: center;
+}
+
 
 /* Footer */
 .footer {
