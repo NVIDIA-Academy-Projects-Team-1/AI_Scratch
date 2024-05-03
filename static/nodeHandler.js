@@ -13,11 +13,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 if(targetNode.querySelector("#train-model") != null){
                     targetNode.querySelector("#train-model").disabled = false;
                 }
-                else if(targetNode.querySelector("#generate-text") != null){
-                    targetNode.querySelector("#generate-text").disabled = false;
+                else if(targetNode.querySelector("#query-model") != null){
+                    targetNode.querySelector("#query-model").disabled = false;
                 }
                 else{
-                    document.querySelector("#generate-text").disabled = true;
+                    document.querySelector("#query-model").disabled = true;
                     document.querySelector("#train-model").disabled = true;
                 }   
             }
