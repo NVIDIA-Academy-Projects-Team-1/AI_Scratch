@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>AI Scratch</title>
     <link rel="stylesheet" href="{{url_for('static', filename = 'index_style.css')}}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Noto+Sans+KR&display=swap" rel="stylesheet">
+
 </head>
 <body>
     <script src="{{url_for('static', filename = 'index.js')}}"></script>
@@ -11,7 +15,7 @@
     <script src="{{url_for('static', filename = 'nodeHandler.js')}}"></script>
     <script src="{{url_for('static', filename = 'testHandler.js')}}"></script>
     <script src="{{url_for('static', filename = 'trainModel.js')}}"></script>
-    <!-- <script src="{{url_for('static', filename = 'handleResponse.js')}}"></script> -->
+    <script src="{{url_for('static', filename = 'handleResponse.js')}}"></script>
     <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 
@@ -31,6 +35,7 @@
                 </div>
                 <div class="node-boxes" id="input-image">
                     <p class="text">이미지를 선택해주세요</p>
+                    
                     <input type="file" id='img' name="img" accept="image/*" multiple="multiple"/>
                 </div>
                 <div class="node-boxes" id="input-text">
@@ -40,11 +45,33 @@
             </div>
 
             <div id="layer2" style="display: none">
-                <div class="node-boxes" id="hidden-dense">
+                <div class="node-boxes" id="hidden-dense1">
                     <p class="text">뉴런</p>
-                    <p class="text">사용할 뉴런 개수: <input type='number' id="units" name="units" min="1" max="50"/></p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units1" name="units" min="1" max="50"/></p>
                     <p class="text">사용할 활성화 함수: 
-                        <select id="activationFunc" >
+                        <select id="activationFunc1" >
+                            <option value="sigmoid">시그모이드</option>
+                            <option value="softmax">소프트맥스</option>
+                            <option value="relu">ReLU</option>
+                        </select>
+                    </p>
+                </div>
+                <div class="node-boxes" id="hidden-dense2">
+                    <p class="text">뉴런</p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units2" name="units" min="1" max="50"/></p>
+                    <p class="text">사용할 활성화 함수: 
+                        <select id="activationFunc2" >
+                            <option value="sigmoid">시그모이드</option>
+                            <option value="softmax">소프트맥스</option>
+                            <option value="relu">ReLU</option>
+                        </select>
+                    </p>
+                </div>
+                <div class="node-boxes" id="hidden-dense3">
+                    <p class="text">뉴런</p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units3" name="units" min="1" max="50"/></p>
+                    <p class="text">사용할 활성화 함수: 
+                        <select id="activationFunc3" >
                             <option value="sigmoid">시그모이드</option>
                             <option value="softmax">소프트맥스</option>
                             <option value="relu">ReLU</option>
@@ -87,6 +114,7 @@
                 <div id="num-test-page" style="display: none;">
                     <p class="text">예측할 숫자 입력</p>
                     <input type="text" id="test-x" name="test-x" size="20" placeholder="콤마(,)로 구분된 숫자"/>
+                    <input type="submit" class="submit-button" id="test-num-button" value="모델 테스트하기" disabled/>
                     <div id="num-test-output"></div>
                 </div>
                 <div id="image-test-page" style="display: none;">

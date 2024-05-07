@@ -8,12 +8,17 @@ document.addEventListener("DOMContentLoaded", function() {
     const queryButton = document.getElementById("query-model")
 
     trainButton.onclick = function() {
+        document.querySelector("#test-num-button").disabled = false;
    
         var x_val = document.getElementById('x').value;
         var y_val = document.getElementById('y').value;
         // var img_val = document.getElementById('img').value;
-        var units_val = document.getElementById('units').value;
-        var act_val = document.getElementById('activationFunc').value;
+        var units_val_1 = document.getElementById('units1').value;
+        var units_val_2 = document.getElementById('units2').value;
+        var units_val_3 = document.getElementById('units3').value;
+        var act_val_1 = document.getElementById('activationFunc1').value;
+        var act_val_2 = document.getElementById('activationFunc2').value;
+        var act_val_3 = document.getElementById('activationFunc3').value;
 
         var parent = document.getElementById("constructModel");
 
@@ -33,8 +38,12 @@ document.addEventListener("DOMContentLoaded", function() {
             x: x_val,
             y: y_val,
             // img: img_val,
-            units: units_val,
-            activation: act_val
+            units1: units_val_1,
+            units2: units_val_2,
+            units3: units_val_3,
+            activation1: act_val_1,
+            activation2: act_val_2,
+            activation3: act_val_3,
         }
 
         $.ajax({
@@ -43,43 +52,88 @@ document.addEventListener("DOMContentLoaded", function() {
             data: data,
             success: (res) => {
                 console.log(res);
+
+                var logDiv = document.getElementById("log");
+                var lines = res.split('\n');
+                
+                lines.forEach(line => {
+                    var log = document.createTextNode(line);
+                    logDiv.appendChild(log);
+                    logDiv.appendChild(document.createElement('br'));
+                });
+
+                logDiv.appendChild(document.createTextNode("학습이 완료되었습니다."));
+                logDiv.appendChild(document.createElement('br'));
             }
         });
     }
 
+    
     queryButton.onclick = function() {
-        var text_val = document.getElementById('img').value;
-        var img_val = document.getElementById('img').value;
-        
+        var text_val = document.getElementById('text').value;
+        var img_val = document.getElementById('img').files[0];   // value 제거 후 files 추가 (debug 중)
         var parent = document.getElementById("constructModel");
+
         var type;
 
-        if(parent.querySelector("#input-image") === null){
+        if(parent.querySelector("#input-image") === null && text_val === ''){
             alert("모델에게 질문하기는 이미지 또는 채팅에만 사용할 수 있습니다")
             return;
         }
         
+        var formData = new FormData();
+
         if(parent.querySelector("#input-image") != null){
-            type = "image";
+            formData.append('type','image');
+            formData.append('img', img_val);
         }
         else{
-            type = "text";
+            formData.append('type','text');
+            formData.append('text',text_val);
         }
-
-        var data = {
-            type: type,
-            img: img_val,
-            text: text_val,
-        }
-
+        
         $.ajax({
             url: "/data",
             type: "POST",
-            data: data,
+            processData: false,
+            contentType: false,
+            data: formData,
             success: (res) => {
                 console.log(res);
+                var logDiv = document.getElementById("log");
+                var responseText = document.createTextNode(res.response);
+                logDiv.innerHTML = '';
+                logDiv.appendChild(responseText);
             }
         });
+
+
+        // if(parent.querySelector("#input-image") != null){
+        //     var data = {
+        //         type: "image",
+        //         img: img_val
+        //     }
+        // }
+        // else{
+        //     var data = {
+        //         type: "text",
+        //         text: text_val
+        //     }
+        // }
+        //      $.ajax({
+        //     url: "/data",
+        //     type: "POST",
+        //     data: data,
+        //     success: (res) => {
+        //         console.log(res);
+        //         var logDiv = document.getElementById("log");
+        //         var responseText = document.createTextNode(res.response);
+        //         logDiv.innerHTML = '';
+        //         logDiv.appendChild(responseText);
+        //     }
+        // });
+        
+        
     }
 
 });
