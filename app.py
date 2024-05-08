@@ -7,9 +7,10 @@ import numpy as np
 import json
 import torch
 import math
-import cv2
+import cv2 as cv
 import time
 import os
+import ollama
 
 from tensorflow import keras
 from tensorflow.keras import Model
@@ -18,7 +19,8 @@ from flask import Flask, render_template, request, jsonify, Response, redirect, 
 from werkzeug.utils import secure_filename
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel
-from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.preprocessing.image import img_to_array, load_img
+from PIL import Image
 
 
 ## GLOBAL FIELD ##
@@ -26,16 +28,11 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
 app.config['UPLOAD_FOLDER'] = 'uploads'
+
 data = None
 model = None
 
-tokenizer = PreTrainedTokenizerFast.from_pretrained("skt/kogpt2-base-v2",
-            bos_token = '</s>', eos_token = '</s>', unk_token = '<unk>',
-            pad_token = '<pad>', mask_token = '<mask>')
-
-text_model = GPT2LMHeadModel.from_pretrained("skt/kogpt2-base-v2")
-
-vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes=1000)
+vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes = 1000)
 
 
 ## FLASK APP ROUTES ##
@@ -47,18 +44,24 @@ def init():
 @app.route("/data", methods = ["POST"])
 def fetch_data():
     global data
+    global upload_img_path, image, filename
     data = request.form
+    print("======data : ", data)
     
     if data['type'] == 'number':
         return process_number()
+    
     elif data['type'] == 'image':
         image = request.files.get('img')
+        print('-------------test',image)
         filename = secure_filename(image.filename)
-        image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
+        upload_img_path=os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        image.save(upload_img_path)
         return process_image()
+    
     elif data['type'] == 'text':
-        return generate_response()
+        return createResponse()
+    
     else:
         return jsonify({'msg':"invalid input type"})
 
@@ -125,31 +128,47 @@ def process_number():
 
 @app.route("/response", methods = ["GET"])
 def process_image():
-    # image=data['img']
-    # image=img_to_array(image)
-    # image=image.astype(float)
-    # image=image.reshape((1,image.shape[0],image.shape[1],image.shape[2]))
-    # image=preprocess_input(image)
-    # pre=vgg16_model.predict(image)
-    # label=decode_predictions(pre)
-    # label=label[0][0]
-    # return Response(print('%s (%.2f%%)'%(label[1],label[2]*100)))
-    pass
+    img=load_img(upload_img_path,target_size=(224,224))
+    img=img_to_array(img)
+    img=img.astype('float32')
+    img=img.reshape((1,img.shape[0],img.shape[1],img.shape[2]))
+    img=preprocess_input(img)
+
+    pre=vgg16_model.predict(img)
+    label=decode_predictions(pre)
+    label=label[0][0]
+    result=(f' 예측한 사진의 종류는 {label[1]} 이고 예측 정확도는 {float(label[2]*100):.2f} 입니다.')
+    return jsonify({'response': result})
+
 
 
 @app.route("/response", methods=["GET"])
-def generate_response():
-    question = "근육을 키우려면?"
-    input_ids = tokenizer.encode(question, return_tensors='pt')
-    gen_ids = text_model.generate(input_ids,
-                             max_length=128,
-                             repetition_penalty=2.0,
-                             pad_token_id=tokenizer.pad_token_id,
-                             eos_token_id=tokenizer.eos_token_id,
-                             bos_token_id=tokenizer.bos_token_id,
-                             use_cache=True)
-    generated = tokenizer.decode(gen_ids[0])
-    return f"{generated}"
+def createResponse():
+    content = data['text']
+    
+    response = ollama.chat(model = 'llama3', messages = [
+            {
+                'role' : 'system',
+                'content' : 'You are a helpful AI responding to Korean users. You must create response in Korean language no matter what.',
+            },
+            {
+                'role' : 'system',
+                'content' : 'You must not response to question related to drugs or other sensitive subjetcs. When you receive questions as mentioned before, answer "죄송합니다. 해당 질문에 대한 답변은 해 드릴 수 없습니다.".'
+            },
+            {
+                'role' : 'user',
+                'content' : f'{content}',
+            }
+        ],
+    )
+
+    if response['message']['content'].startswith('I cannot provide'):
+        original_answer = "죄송합니다. 해당 질문에 대한 답변은 해 드릴 수 없습니다."
+    else:
+        original_answer = response['message']['content']
+
+    print("Original Answer : ", original_answer)
+    return jsonify({'response': original_answer})
 
 
 ## RUN FLASK APP ##

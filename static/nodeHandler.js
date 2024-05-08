@@ -1,5 +1,7 @@
 /*
     nodeHandler: Handle node behavior
+    * Disable train/query model button when train/query node has not yet been placed
+    * Enable train/query model button when train/query node has been placed
 */
 
 

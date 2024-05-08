@@ -1,5 +1,6 @@
 /*
-    Handling event when node block has dragged from layer selection container
+    layerHandler.js : Handle event when node block has dragged from layer selection container
+    * Hide placeholdertext when node block is placed inside consturctModel div container
 */
 
 

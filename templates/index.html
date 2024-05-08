@@ -7,7 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Noto+Sans+KR&display=swap" rel="stylesheet">
-
 </head>
 <body>
     <script src="{{url_for('static', filename = 'index.js')}}"></script>
@@ -16,17 +15,19 @@
     <script src="{{url_for('static', filename = 'testHandler.js')}}"></script>
     <script src="{{url_for('static', filename = 'trainModel.js')}}"></script>
     <script src="{{url_for('static', filename = 'handleResponse.js')}}"></script>
+    <script src="{{url_for('static', filename = 'tooltip.js')}}"></script>
     <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 
     <div class="container">
+        <!-- Layer select button, Node selection Div containers -->
         <div class="layer-select">
             <div class="select">
                 <button id="input-layer-button"><img src="{{url_for('static', filename = 'res/input.svg')}}"><br>입력</button>
                 <button id="hidden-layer-button"><img src="{{url_for('static', filename = 'res/layers.svg')}}"><br>모델 쌓기</button>
                 <button id="run-layer-button"><img src="{{url_for('static', filename = 'res/output.svg')}}"><br>출력</button>
             </div>
-
+            <!-- Input layer -->
             <div id="layer1" style="display: none">
                 <div class="node-boxes" id="input-number">
                     <p class="text">시작값과 예측값을 입력해주세요</p>
@@ -35,15 +36,14 @@
                 </div>
                 <div class="node-boxes" id="input-image">
                     <p class="text">이미지를 선택해주세요</p>
-                    
-                    <input type="file" id='img' name="img" accept="image/*" multiple="multiple"/>
+                    <input type="file" id='img' name="img" accept="image/*"/>
                 </div>
                 <div class="node-boxes" id="input-text">
                     <p class="text">질문을 입력해주세요</p>
                     <div class="input-boxes"><input id="text" name="text" size="20" placeholder="예)안녕? 너는 누구니?"/></div>
                 </div>
             </div>
-
+            <!-- Hidden layer -->
             <div id="layer2" style="display: none">
                 <div class="node-boxes" id="hidden-dense1">
                     <p class="text">뉴런</p>
@@ -85,7 +85,7 @@
                     <p class="text">채팅 봇</p>
                 </div>
             </div>
-
+            <!-- Output layer -->
             <div id="layer3" style="display: none">
                 <div class="node-boxes">
                     <input type="submit" class="submit-button" id="train-model" name="train-model" value="모델 훈련시키기" disabled/>
@@ -96,6 +96,7 @@
             </div>
         </div>
 
+        <!-- Div container for constructing model -->
         <div class="layer-canvas">
             <div id="draw-model">
                 <div id="constructModel"><p class="text" id="placeholdertext" style="display: block;">이곳에 입력 노드를 끌어와주세요</p></div>
@@ -106,6 +107,7 @@
             <div id="layer-description"></div>
         </div>
 
+        <!-- Output : Print result and test model -->
         <div class="output">
             <div id="model-log">
                 <div id="log"></div>
@@ -117,23 +119,16 @@
                     <input type="submit" class="submit-button" id="test-num-button" value="모델 테스트하기" disabled/>
                     <div id="num-test-output"></div>
                 </div>
-                <div id="image-test-page" style="display: none;">
-                    <p class="text">분류할 이미지 업로드</p>
-                    <div id="image-test-output"></div>
-                </div>
-                <div id="text-test-page" style="display: none;">
-                    <p class="text">질문 입력</p>
-                    <input type="text" id="test-text" name="test-text" size="20" placeholder="예)안녕? 너는 누구니?"/>
-                    <div id="text-test-output"></div>
-                </div>
             </div>
         </div>
+
     </div>
 
+    <!-- Footer for license or developer info -->
     <div class="footer">
     </div>
 
-
+    <!-- SortableJS implementation -->
     <script>
         Sortable.create(layer1, {
             sort: false,
@@ -177,8 +172,9 @@
             //     }
             // }
         });
+
+
     </script>
     
 </body>
 </html>
-

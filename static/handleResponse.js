@@ -1,3 +1,11 @@
+/*
+    handleResponse.js : Handle response from server
+
+    TODO : Not Working Properly, all responses are now being processed in trainModel.js/testHandler.js
+*/
+
+
+
 function getResponse() {
     $.ajax({
         type: "GET",

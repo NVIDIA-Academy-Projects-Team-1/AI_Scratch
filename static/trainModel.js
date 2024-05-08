@@ -1,5 +1,7 @@
 /*
-    nodeHandler: Handle node behavior
+    trainModel.js : Handle train/query action
+    * Send server number/image/text data
+    * Process response from server
 */
 
 
@@ -7,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const trainButton = document.getElementById("train-model")
     const queryButton = document.getElementById("query-model")
 
+    // When input is number
     trainButton.onclick = function() {
         document.querySelector("#test-num-button").disabled = false;
    
@@ -69,18 +72,18 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     
+    // When input is image/text
     queryButton.onclick = function() {
         var text_val = document.getElementById('text').value;
-        var img_val = document.getElementById('img').files[0];   // value 제거 후 files 추가 (debug 중)
+        var img_val = document.getElementById('img').files[0];
         var parent = document.getElementById("constructModel");
-
         var type;
 
         if(parent.querySelector("#input-image") === null && text_val === ''){
             alert("모델에게 질문하기는 이미지 또는 채팅에만 사용할 수 있습니다")
             return;
         }
-        
+
         var formData = new FormData();
 
         if(parent.querySelector("#input-image") != null){
@@ -91,7 +94,12 @@ document.addEventListener("DOMContentLoaded", function() {
             formData.append('type','text');
             formData.append('text',text_val);
         }
-        
+        var fileDOM = document.querySelector('#file');
+        var preview = document.querySelector('.image-box');
+
+        fileDOM.addEventListener('change',() => { 
+            var imageSrc 
+        })
         $.ajax({
             url: "/data",
             type: "POST",
@@ -106,33 +114,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 logDiv.appendChild(responseText);
             }
         });
-
-
-        // if(parent.querySelector("#input-image") != null){
-        //     var data = {
-        //         type: "image",
-        //         img: img_val
-        //     }
-        // }
-        // else{
-        //     var data = {
-        //         type: "text",
-        //         text: text_val
-        //     }
-        // }
-        //      $.ajax({
-        //     url: "/data",
-        //     type: "POST",
-        //     data: data,
-        //     success: (res) => {
-        //         console.log(res);
-        //         var logDiv = document.getElementById("log");
-        //         var responseText = document.createTextNode(res.response);
-        //         logDiv.innerHTML = '';
-        //         logDiv.appendChild(responseText);
-        //     }
-        // });
-        
         
     }
 

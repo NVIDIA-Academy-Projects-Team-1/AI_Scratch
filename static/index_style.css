@@ -93,6 +93,7 @@ body {
     margin-top: 10px;
     margin-bottom: 10px;
     display: inline-block;
+    padding: 1px 1px;
 }
 
 .input-boxes {
@@ -166,11 +167,15 @@ body {
     border-radius: 5px;
     font-size: 13px;
     overflow-y: scroll;
+    letter-spacing: 2px;
+    line-height: 2;
+    
 }
 
 #log {
     padding:10px;
 }
+
 
 #model-test {
     width: 100%;
@@ -180,9 +185,7 @@ body {
     overflow-y: scroll;
 }
 
-#num-test-button,
-#image-test-button,
-#text-test-button {
+#num-test-button {
     float: left; 
     width: 33.3%;
     height: 100%;
@@ -191,9 +194,7 @@ body {
     border-radius: 5px;
 }
 
-#num-test-page,
-#image-test-page,
-#text-test-page {
+#num-test-page {
     text-align: center;
 }
 
@@ -207,4 +208,10 @@ body {
     width: 100%;
     height: 10vh;
     background-color: white;
+}
+
+/* eaplain */
+#layer-description {
+    letter-spacing: 2px;
+    line-height: 2;
 }

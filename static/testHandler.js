@@ -1,12 +1,12 @@
 /*
-    testHandler: Handle test container
+    testHandler: Handle model test div container
+    * Send server test data
+    * Process response from server
 */
 
 
 document.addEventListener("DOMContentLoaded", function() {
-    /*
-        Disable test divs by input type
-    */
+    // Disable test button when image/text input node has been selected
     const targetNode = document.getElementById("constructModel");
     const config = {childList : true};
 
@@ -15,18 +15,6 @@ document.addEventListener("DOMContentLoaded", function() {
             if(mutation.type === "childList"){
                 if(targetNode.querySelector("#input-number") != null){
                     document.getElementById("num-test-page").style.display = "block";
-                    document.getElementById("image-test-page").style.display = "none";
-                    document.getElementById("text-test-page").style.display = "none";
-                }
-                else if(targetNode.querySelector("#input-image") != null){
-                    document.getElementById("num-test-page").style.display = "none";
-                    document.getElementById("image-test-page").style.display = "block";
-                    document.getElementById("text-test-page").style.display = "none";
-                }
-                else if(targetNode.querySelector("#input-text") != null){
-                    document.getElementById("num-test-page").style.display = "none";
-                    document.getElementById("image-test-page").style.display = "none";
-                    document.getElementById("text-test-page").style.display = "block";
                 }
             }
         }
@@ -34,9 +22,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const observer = new MutationObserver(callback);
     observer.observe(targetNode, config);
 
-    /*
-        Send server test values and receive prediction response
-    */
+
+    // Send server test values and receive prediction response
    const testNumberButton = document.getElementById("test-num-button");
 
    testNumberButton.onclick = function() {
