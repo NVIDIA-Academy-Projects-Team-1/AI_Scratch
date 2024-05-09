@@ -30,9 +30,15 @@
             <!-- Input layer -->
             <div id="layer1" style="display: none">
                 <div class="node-boxes" id="input-number">
-                    <p class="text">시작값과 예측값을 입력해주세요</p>
-                    <div class="input-boxes"><label for="x">X:</label><input type="text" id='x' name="x" size="20" placeholder="콤마(,)로 구분된 숫자"/></div>
-                    <div class="input-boxes"><label for="y">Y:</label><input type="text" id='y' name="y" size="20" placeholder="콤마(,)로 구분된 숫자"/></div>
+                    <p class="text">시작값과 목표값을 입력해주세요</p>
+                    <div class="input-boxes"><label for="x">X:</label><input type="text" id='x' name="x" size="20" placeholder="콤마(,)로 구분된 숫자" required/></div>
+                    <div class="input-boxes"><label for="y">Y:</label><input type="text" id='y' name="y" size="20" placeholder="콤마(,)로 구분된 숫자" required/></div>
+                </div>
+                <div class="node-boxes" id="input-number-logistic">
+                    <p class="text">조건값과 클래스값을 입력해주세요</p>
+                    <div class="input-boxes"><label for="class">분류할 클래스 개수:</label><input type="text" id='class' name="x" size="5" placeholder="숫자" required/></div>
+                    <div class="input-boxes"><label for="x-log">조건값:</label><input type="text" id='x-log' name="x-log" size="20" placeholder="콤마(,)로 구분된 숫자" required/></div>
+                    <div class="input-boxes"><label for="y-log">클래스:</label><input type="text" id='y-log' name="y-log" size="20" placeholder="콤마(,)로 구분된 클래스 번호" required/></div>
                 </div>
                 <div class="node-boxes" id="input-image">
                     <p class="text">이미지를 선택해주세요</p>
@@ -40,40 +46,37 @@
                 </div>
                 <div class="node-boxes" id="input-text">
                     <p class="text">질문을 입력해주세요</p>
-                    <div class="input-boxes"><input id="text" name="text" size="20" placeholder="예)안녕? 너는 누구니?"/></div>
+                    <div class="input-boxes"><input id="text" name="text" size="20" placeholder="예)안녕? 너는 누구니?" required/></div>
                 </div>
             </div>
             <!-- Hidden layer -->
             <div id="layer2" style="display: none">
                 <div class="node-boxes" id="hidden-dense1">
                     <p class="text">뉴런</p>
-                    <p class="text">사용할 뉴런 개수: <input type='number' id="units1" name="units" min="1" max="50"/></p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units1" name="units" min="1" max="50" required/></p>
                     <p class="text">사용할 활성화 함수: 
                         <select id="activationFunc1" >
                             <option value="sigmoid">시그모이드</option>
-                            <option value="softmax">소프트맥스</option>
                             <option value="relu">ReLU</option>
                         </select>
                     </p>
                 </div>
                 <div class="node-boxes" id="hidden-dense2">
                     <p class="text">뉴런</p>
-                    <p class="text">사용할 뉴런 개수: <input type='number' id="units2" name="units" min="1" max="50"/></p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units2" name="units" min="1" max="50" required/></p>
                     <p class="text">사용할 활성화 함수: 
                         <select id="activationFunc2" >
                             <option value="sigmoid">시그모이드</option>
-                            <option value="softmax">소프트맥스</option>
                             <option value="relu">ReLU</option>
                         </select>
                     </p>
                 </div>
                 <div class="node-boxes" id="hidden-dense3">
                     <p class="text">뉴런</p>
-                    <p class="text">사용할 뉴런 개수: <input type='number' id="units3" name="units" min="1" max="50"/></p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units3" name="units" min="1" max="50" required/></p>
                     <p class="text">사용할 활성화 함수: 
                         <select id="activationFunc3" >
                             <option value="sigmoid">시그모이드</option>
-                            <option value="softmax">소프트맥스</option>
                             <option value="relu">ReLU</option>
                         </select>
                     </p>

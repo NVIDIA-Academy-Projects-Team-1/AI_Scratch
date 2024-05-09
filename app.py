@@ -15,7 +15,7 @@ import ollama
 from tensorflow import keras
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Flatten
-from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, stream_with_context
+from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, stream_with_context, send_from_directory
 from werkzeug.utils import secure_filename
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel
@@ -46,16 +46,22 @@ def fetch_data():
     global data
     global upload_img_path, image, filename
     data = request.form
-    print("======data : ", data)
+    print('==========  fetch_data called  ==========')
+    print(data)
+    print('==========     end of data     ==========')
     
     if data['type'] == 'number':
-        return process_number()
+        if data['reg_type'] == 'linear':
+            return process_number()
+        else:
+            return process_number_logistic()
     
     elif data['type'] == 'image':
-        image = request.files.get('img')
-        print('-------------test',image)
+        image = request.files['img']
+        # print('-------------test',image)
         filename = secure_filename(image.filename)
         upload_img_path=os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        # print(f'---------------------{upload_img_path}-------{image}')
         image.save(upload_img_path)
         return process_image()
     
@@ -107,9 +113,9 @@ def process_number():
     model = Model(inputs = input, outputs = output)
     model.summary()
 
-    optimizer = keras.optimizers.SGD(learning_rate = 1e-3)
+    optimizer = keras.optimizers.Adam()
     lossFunc = keras.losses.MeanSquaredError()
-    
+            
     def train():
         for i in range(10):
             for x, y in dataset:
@@ -121,10 +127,58 @@ def process_number():
                 grad = tape.gradient(loss, model.trainable_weights)
                 optimizer.apply_gradients(zip(grad, model.trainable_weights))
             print(f"epoch {i + 1} done, loss {float(loss)}")
-            yield f"현재 모델은 {i + 1}번째 학습중이며, 예측값과의 차이는 {float(loss):.0f}입니다.\n"
+            yield f"현재 모델은 {i + 1}번째 학습중이며, 예측값과의 차이는 {float(loss):.2f}입니다.\n"
             
     return Response(train())
 
+
+@app.route("/responser", methods = ["GET"])
+def process_number_logistic():
+    global model
+    x_data = np.array([[float(i)] for i in data['x_log'].split(',')])
+    y_data = np.array([[float(i)] for i in data['y_log'].split(',')])
+    units_1 = int(data['units1']) if data['units1'] != '' else 0
+    units_2 = int(data['units2']) if data['units2'] != '' else 0
+    units_3 = int(data['units3']) if data['units3'] != '' else 0
+
+    unit_list = [units_1, units_2, units_3]
+    activation_list = [data['activation1'], data['activation2'], data['activation3']]
+    layer_list = [Dense(units = x, activation = y) for x, y in zip(unit_list, activation_list) if x != 0]
+
+    dataset = tf.data.Dataset.from_tensor_slices((x_data, y_data))
+
+    input = Input(shape = (1, ))
+    x = input
+    for layer in layer_list:
+        x = layer(x)
+    output = Dense(units = data['class'], activation = 'sigmoid')(x)
+    model = Model(inputs = input, outputs = output)
+    model.summary()
+
+    optimizer = keras.optimizers.Adam()
+    lossFunc = keras.losses.SparseCategoricalCrossentropy(from_logits = True)
+    acc = keras.metrics.SparseCategoricalAccuracy()
+    
+    def train():
+        for i in range(10):
+            for x, y in dataset:
+                #print("x : ", x[0], "y : ", y[0])
+                with tf.GradientTape() as tape:
+                    logit = model(x, training = True)
+                    loss = lossFunc(y, logit)
+                
+                grad = tape.gradient(loss, model.trainable_weights)
+                optimizer.apply_gradients(zip(grad, model.trainable_weights))
+                acc.update_state(y, logit)
+            accuracy = acc.result()
+            print(f"epoch {i + 1} done, accuracy {float(accuracy)}")
+            yield f"현재 모델은 {i + 1}번째 학습중이며, 정확도는 {float(accuracy * 100):.2f}% 입니다.\n"
+            
+    return Response(train())
+
+@app.route('/uploads/<filename>')
+def uploads_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
 
 @app.route("/response", methods = ["GET"])
 def process_image():
@@ -134,11 +188,31 @@ def process_image():
     img=img.reshape((1,img.shape[0],img.shape[1],img.shape[2]))
     img=preprocess_input(img)
 
-    pre=vgg16_model.predict(img)
+    pre=vgg16_model.predict(img, verbose = 0)
     label=decode_predictions(pre)
     label=label[0][0]
     result=(f' 예측한 사진의 종류는 {label[1]} 이고 예측 정확도는 {float(label[2]*100):.2f} 입니다.')
-    return jsonify({'response': result})
+
+    content = result
+
+    response = ollama.chat(model = 'llama3',messages=[
+        {
+            'role' : 'system',
+            'content' : 'You are a helpful AI responding to Korean users. You must create response in Korean language no matter what.',
+        },
+        {
+            'role' : 'system',
+            'content' : "Translate English word to Korean in given content. You must reply as '예측한 사진의 종류는 <your_translation>이고 예측 정확도는 <accuracy_in_given_content>% 입니다."
+        },
+        {
+            'role' : 'user',
+            'content' : f'{content}',
+        }
+    ])
+    print('generated text: ', response['message']['content'], 'acc: %.2f' % float(label[2]*100))
+
+    return jsonify({'response': response['message']['content'], 'image_path':upload_img_path})
+    # return jsonify({'response':result, 'image_path':upload_img_path})
 
 
 
