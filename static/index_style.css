@@ -1,5 +1,7 @@
 body {
     margin: 0;
+    font-family: 'Nanum Gothic', sans-serif;
+    font-size: small;
 }
 
 ul {
@@ -7,17 +9,6 @@ ul {
     padding: 0;
     margin: 0;
 }
-
-.nanum-gothic-regular {
-    font-family: "Nanum Gothic", sans-serif;
-    font-weight: 400;
-    font-style: normal;
-}
-
-body {
-    font-family: 'Nanum Gothic', sans-serif;
-}
-  
 
 .text {
     -webkit-touch-callout: none;
@@ -36,49 +27,71 @@ body {
     display: flex;
 }
 
-/* Layer select button */
 .layer-select {
     width: 20%;
     display: flex;
     flex-direction: column;
 }
 
-#input-layer-button {
+#input-layer-button,
+#hidden-layer-button,
+#run-layer-button {
     float: left; 
     width: 33.3%;
     height: 100%;
-    background-color: yellow;
-    border-width: 1px;
-    border-radius: 5px;
+    border-width: 0px; 
+    /* border-radius: 5px; */
+}
+
+#input-layer-button {
+    background-color: #b3d1ff;
+    
 }
 
 #hidden-layer-button {
-    float: left;
-    width: 33.3%;
-    height: 100%;
-    background-color: green;
-    border-width: 1px;
-    border-radius: 5px;
+    background-color: #f8ccd7;
 }
 
 #run-layer-button {
-    float: left;
-    width: 33.3%;
-    height: 100%;
-    background-color: salmon;
-    border-width: 1px;
-    border-radius: 5px;
+    background-color: #c7ebc6;
 }
 
-/* Div for containing layer nodes */
-#layer1,
-#layer2,
+#layer1 {
+    width: 100%;
+    height: 100%;
+    float: left;
+    background-color: #b3d1ff;
+    border-radius: 5px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    text-align: center;
+}
+
+#layer2 {
+    width: 100%;
+    height: 100%;
+    float: left;
+    background-color: #f8ccd7;
+    border-radius: 5px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    text-align: center;
+}
+
 #layer3 {
     width: 100%;
     height: 100%;
     float: left;
-    background-color: skyblue;
+    background-color: #c7ebc6;
     border-radius: 5px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -111,32 +124,30 @@ body {
     margin-left: 20px;
 }
 
-
 .submit-button {
     margin-top: 20px;
     margin-left: 10px;
     margin-bottom: 20px;
 }
 
-/* Canvas and description */
 .layer-canvas {
     width: 50%;
     height: 100vh;
-    background-color: white;
+    background-color: #f2f2f2;
     display: flex;
     flex-direction: column;
     position: relative;
 }
 
 #draw-model {
-    --dot-bg: white;
-    --dot-color: black;
+    --dot-bg: #ffffff;
+    --dot-color: #000000;
     --dot-size: 1px;
     --dot-space: 22px;
-      background:
-          linear-gradient(90deg, var(--dot-bg) calc(var(--dot-space) - var(--dot-size)), transparent 1%) center / var(--dot-space) var(--dot-space),
-          linear-gradient(var(--dot-bg) calc(var(--dot-space) - var(--dot-size)), transparent 1%) center / var(--dot-space) var(--dot-space),
-          var(--dot-color);
+    background:
+        linear-gradient(90deg, var(--dot-bg) calc(var(--dot-space) - var(--dot-size)), transparent 1%) center / var(--dot-space) var(--dot-space),
+        linear-gradient(var(--dot-bg) calc(var(--dot-space) - var(--dot-size)), transparent 1%) center / var(--dot-space) var(--dot-space),
+        var(--dot-color);
     width: 100%;
     height: 80%;
     overflow-y: scroll;
@@ -152,18 +163,19 @@ body {
 
 #reset {
     padding: 2px 3px;
-    position: absolute; top:10px; right: 20px;
+    position: absolute;
+    top: 10px;
+    right: 20px;
 }
 
 #layer-description {
     width: 100%;
     height: 20%;
-    background-color: aqua;
+    background-color: rgb(255, 247, 203);
     border-radius: 5px;
     position: relative;
 }
 
-/* Output */
 .output {
     width: 30%;
     height: 100vh;
@@ -174,7 +186,7 @@ body {
 #model-log {
     width: 100%;
     height: 70%;
-    background-color: ivory;
+    background-color: rgb(255, 240, 254);
     border-radius: 5px;
     font-size: 13px;
     overflow-y: scroll;
@@ -183,14 +195,13 @@ body {
 }
 
 #log {
-    padding:10px;
+    padding: 10px;
 }
-
 
 #model-test {
     width: 100%;
     height: 30%;
-    background-color: beige;
+    background-color: #c8ffe1; 
     border-radius: 5px;
     overflow-y: scroll;
 }
@@ -199,7 +210,7 @@ body {
     float: left; 
     width: 33.3%;
     height: 100%;
-    background-color: yellow;
+    background-color: #ffdc89;
     border-width: 1px;
     border-radius: 5px;
 }
@@ -213,14 +224,12 @@ body {
     font-size: 13px;
 }
 
-/* Footer */
 .footer {
     width: 100%;
     height: 10vh;
-    background-color: white;
+    background-color: #f2f2f2;
 }
 
-/* eaplain */
 #layer-description {
     letter-spacing: 1.5px;
     line-height: 1.5;

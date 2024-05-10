@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
     observer.observe(targetNode, config);
 
 
-    // Send server test values and receive prediction response
+   // Send server test values and receive prediction response
    const testNumberButton = document.getElementById("test-num-button");
 
    testNumberButton.onclick = function() {
@@ -47,12 +47,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 var logDiv = document.getElementById("num-test-output");
                 var lines = res.split('\n');
-
+                
                 lines.forEach(line => {
                     var log = document.createTextNode(line);
                     logDiv.appendChild(log);
                     logDiv.appendChild(document.createElement('br'));
                 });
+                logDiv.append("----------------------------")
             }
         });
    }

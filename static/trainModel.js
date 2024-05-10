@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function() {
         var act_val_3 = document.getElementById('activationFunc3').value;
 
         var parent = document.getElementById("constructModel");
-
+        
         // Exception handling
         if(units_val_1 != '' && (units_val_1 <= 0 || units_val_1 > 128)){
             alert("뉴런의 개수는 음수이거나 128개를 넘을 수 없습니다.");
@@ -53,6 +53,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 alert("시작값과 목표값의 개수가 다릅니다.");
                 return;
             }
+            if(x_val === '' || y_val === ''){
+                alert("시작값과 목표값을 입력해 주세요");
+                return;
+            }
         }
         else if(parent.querySelector("#input-number-logistic")){
             var y_log_val_list = y_log_val.split(',').map(Number);
@@ -74,9 +78,14 @@ document.addEventListener("DOMContentLoaded", function() {
                 alert("조건값과 클래스값의 개수가 다릅니다.")
                 return;
             }
+            if(x_log_val === '' || y_log_val === ''){
+                alert("조건값과 클래스값을 입력해 주세요.");
+                return;
+            }
         }
-        else{
-            alert("모델 훈련은 숫자 예측에만 사용할 수 있습니다");
+
+        if(parent.querySelector("#input-image") || parent.querySelector("#input-text")){
+            alert("모델 훈련하기는 숫자 예측에만 사용할 수 있습니다");
             return;
         }
 
@@ -127,8 +136,8 @@ document.addEventListener("DOMContentLoaded", function() {
         var parent = document.getElementById("constructModel");
         var type;
 
-        if(parent.querySelector("#input-image") === null && text_val === ''){
-            alert("모델에게 질문하기는 이미지 또는 채팅에만 사용할 수 있습니다")
+        if(parent.querySelector("#input-number") || parent.querySelector("#input-number-logistic")){
+            alert("모델에 질문하기는 이미지와 챗봇에만 사용할 수 있습니다");
             return;
         }
 
@@ -145,8 +154,8 @@ document.addEventListener("DOMContentLoaded", function() {
         else{
             formData.append('type','text');
             formData.append('text',text_val);
-            
         }
+
         // when image is not existed use only text response, if they have use image with text response
         if(parent.querySelector('#input-image') == null){
             $.ajax({

@@ -127,7 +127,7 @@ def process_number():
                 grad = tape.gradient(loss, model.trainable_weights)
                 optimizer.apply_gradients(zip(grad, model.trainable_weights))
             print(f"epoch {i + 1} done, loss {float(loss)}")
-            yield f"현재 모델은 {i + 1}번째 학습중이며, 예측값과의 차이는 {float(loss):.2f}입니다.\n"
+            yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f}입니다.\n"
             
     return Response(train())
 
@@ -202,7 +202,7 @@ def process_image():
         },
         {
             'role' : 'system',
-            'content' : "Translate English word to Korean in given content. You must reply as '예측한 사진의 종류는 <your_translation>이고 예측 정확도는 <accuracy_in_given_content>% 입니다."
+            'content' : "Translate English word, which is from imagenet dataset label, to Korean in given content. You must reply as '예측한 사진의 종류는 <your_translation>이고 예측 정확도는 <accuracy_in_given_content>% 입니다."
         },
         {
             'role' : 'user',
