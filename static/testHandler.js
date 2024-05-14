@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const callback = (mutationList, observer) => {
         for(const mutation of mutationList){
             if(mutation.type === "childList"){
-                if(targetNode.querySelector("#input-number") != null){
+                if(targetNode.querySelector("#input-number") || targetNode.querySelector("#input-number-file")){
                     document.getElementById("num-test-page").style.display = "block";
                 }
             }
@@ -53,7 +53,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     logDiv.appendChild(log);
                     logDiv.appendChild(document.createElement('br'));
                 });
-                logDiv.append("----------------------------")
+                logDiv.append("----------------------------");
+                logDiv.appendChild(document.createElement('br'));
             }
         });
    }

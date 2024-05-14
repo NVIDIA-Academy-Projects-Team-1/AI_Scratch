@@ -4,6 +4,7 @@
 ## MODULE IMPORTS ##
 import tensorflow as tf
 import numpy as np
+import re
 import json
 import torch
 import math
@@ -11,6 +12,11 @@ import cv2 as cv
 import time
 import os
 import ollama
+import speech_recognition as sr
+import pyaudio
+import soundfile
+import io
+
 
 from tensorflow import keras
 from tensorflow.keras import Model
@@ -50,7 +56,18 @@ def fetch_data():
     print(data)
     print('==========     end of data     ==========')
     
-    if data['type'] == 'number':
+    if data['type'] == 'number' or data['type'] == 'number-file':
+        if data['type'] == 'number-file':
+            regexp = r'^[0-9,]+$'
+            parsed_x = request.files['x_file'].read().decode('utf-8')
+            parsed_y = request.files['y_file'].read().decode('utf-8')
+            data = request.form.to_dict()
+
+            if re.match(regexp, parsed_x) is None or re.match(regexp, parsed_y) is None:
+                return jsonify({"alert" : "파일에는 콤마(,)로 구분된 숫자만 들어있어야 합니다."})
+            data['x'] = parsed_x
+            data['y'] = parsed_y
+            return process_number()
         if data['reg_type'] == 'linear':
             return process_number()
         else:
@@ -60,7 +77,7 @@ def fetch_data():
         image = request.files['img']
         # print('-------------test',image)
         filename = secure_filename(image.filename)
-        upload_img_path=os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        upload_img_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         # print(f'---------------------{upload_img_path}-------{image}')
         image.save(upload_img_path)
         return process_image()
@@ -70,6 +87,33 @@ def fetch_data():
     
     else:
         return jsonify({'msg':"invalid input type"})
+
+
+@app.route("/audio_to_text", methods=["POST"])
+def audio_to_text():
+    recognizer = sr.Recognizer()
+    audio_file = request.files['audio'].read()
+
+    # with open('audio.wav', 'wb') as f:
+    #     f.write(audio_file)
+    
+    # data, samplerate = soundfile.read('/Users/jaeh/Documents/NVIDIA_AI_Academy/AI_Scratch/audio.wav')
+    # soundfile.write(audio_file, data, samplerate, subtype = 'PCM_16')
+
+    with io.BytesIO(audio_file) as f:
+        data, samplerate = soundfile.read(f)
+        soundfile.write('audio.wav', data, samplerate)
+    
+    with sr.AudioFile('audio.wav') as source:
+        audio = recognizer.record(source)
+
+    try:
+        text = recognizer.recognize_google(audio, language='ko-KR')
+        print('인식된 음성은 : {}'.format(text))
+        return jsonify({'text': text})
+    except sr.UnknownValueError:
+        print("Recognition error")
+        return jsonify({'error': '인식할 수 없습니다'}), 400
 
 
 @app.route("/testdata", methods = ["POST"])
@@ -93,8 +137,13 @@ def process_number():
     print('==========process_number called==========')
     print(data)
     print('==========     end of data     ==========')
-    x_data = np.array([[float(i)] for i in data['x'].split(',')])
+
+    x_data = np.array([[float(i)] for i in data['x'].split(',')]) 
     y_data = np.array([[float(i)] for i in data['y'].split(',')])
+
+    if x_data.size != y_data.size:
+        return jsonify({"alert" : "파일의 목표값과 시작값의 개수가 다릅니다."})
+
     units_1 = int(data['units1']) if data['units1'] != '' else 0
     units_2 = int(data['units2']) if data['units2'] != '' else 0
     units_3 = int(data['units3']) if data['units3'] != '' else 0
@@ -119,7 +168,6 @@ def process_number():
     def train():
         for i in range(10):
             for x, y in dataset:
-                #print("x : ", x[0], "y : ", y[0])
                 with tf.GradientTape() as tape:
                     logit = model(x, training = True)
                     loss = lossFunc(y, logit)
@@ -162,7 +210,6 @@ def process_number_logistic():
     def train():
         for i in range(10):
             for x, y in dataset:
-                #print("x : ", x[0], "y : ", y[0])
                 with tf.GradientTape() as tape:
                     logit = model(x, training = True)
                     loss = lossFunc(y, logit)
@@ -176,9 +223,11 @@ def process_number_logistic():
             
     return Response(train())
 
+
 @app.route('/uploads/<filename>')
 def uploads_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
+
 
 @app.route("/response", methods = ["GET"])
 def process_image():
@@ -213,7 +262,6 @@ def process_image():
 
     return jsonify({'response': response['message']['content'], 'image_path':upload_img_path})
     # return jsonify({'response':result, 'image_path':upload_img_path})
-
 
 
 @app.route("/response", methods=["GET"])

@@ -16,6 +16,9 @@ document.addEventListener("DOMContentLoaded", function() {
         var x_val = document.getElementById('x').value;
         var y_val = document.getElementById('y').value;
 
+        var x_file_val = document.getElementById('x-file').files[0];
+        var y_file_val = document.getElementById('y-file').files[0];
+
         var class_val = document.getElementById('class').value;
         var x_log_val = document.getElementById('x-log').value;
         var y_log_val = document.getElementById('y-log').value;
@@ -58,6 +61,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 return;
             }
         }
+        else if(parent.querySelector("#input-number-file")){
+            if(x_file_val == null || y_file_val == null){
+                alert("X값 또는 Y값 파일이 올바르게 업로드 되지 않았습니다.");
+                return;
+            }
+        }
         else if(parent.querySelector("#input-number-logistic")){
             var y_log_val_list = y_log_val.split(',').map(Number);
 
@@ -89,43 +98,88 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
+
         // Data aggregation and server requesting
-        var data = {
-            type: "number",
-            reg_type: class_val != '' ? "logistic" : "linear",
-            class: class_val,
-            x: x_val,
-            y: y_val,
-            x_log: x_log_val,
-            y_log: y_log_val,
-            units1: units_val_1,
-            units2: units_val_2,
-            units3: units_val_3,
-            activation1: act_val_1,
-            activation2: act_val_2,
-            activation3: act_val_3,
-        }
 
-        $.ajax({
-            url: "/data",
-            type: "POST",
-            data: data,
-            success: (res) => {
-                console.log(res);
-
-                var logDiv = document.getElementById("log");
-                var lines = res.split('\n');
-                
-                lines.forEach(line => {
-                    var log = document.createTextNode(line);
-                    logDiv.appendChild(log);
-                    logDiv.appendChild(document.createElement('br'));
-                });
-
-                logDiv.appendChild(document.createTextNode("학습이 완료되었습니다."));
-                logDiv.appendChild(document.createElement('br'));
+        if(parent.querySelector("#input-number") || parent.querySelector("#input-number-logistic")){
+            var data = {
+                type: "number",
+                reg_type: class_val != '' ? "logistic" : "linear",
+                class: class_val,
+                x: x_val,
+                y: y_val,
+                x_log: x_log_val,
+                y_log: y_log_val,
+                units1: units_val_1,
+                units2: units_val_2,
+                units3: units_val_3,
+                activation1: act_val_1,
+                activation2: act_val_2,
+                activation3: act_val_3,
             }
-        });
+    
+            $.ajax({
+                url: "/data",
+                type: "POST",
+                data: data,
+                success: (res) => {
+                    console.log(res);
+    
+                    var logDiv = document.getElementById("log");
+                    var lines = res.split('\n');
+                    
+                    lines.forEach(line => {
+                        var log = document.createTextNode(line);
+                        logDiv.appendChild(log);
+                        logDiv.appendChild(document.createElement('br'));
+                    });
+    
+                    logDiv.appendChild(document.createTextNode("학습이 완료되었습니다."));
+                    logDiv.appendChild(document.createElement('br'));
+                }
+            });
+        }
+        else if(parent.querySelector("#input-number-file")){
+            var formData = new FormData();
+            formData.append('type', "number-file");
+            formData.append('reg_type', "linear");
+            formData.append('x_file', x_file_val);
+            formData.append('y_file', y_file_val);
+            formData.append('units1', units_val_1);
+            formData.append('units2', units_val_2);
+            formData.append('units3', units_val_3);
+            formData.append('activation1', act_val_1);
+            formData.append('activation2', act_val_2);
+            formData.append('activation3', act_val_3);
+
+            $.ajax({
+                url: "/data",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: (res) => {
+                    console.log(res);
+
+                    if(res['alert']){
+                        alert(res['alert']);
+                        return;
+                    }
+    
+                    var logDiv = document.getElementById("log");
+                    var lines = res.split('\n');
+                    
+                    lines.forEach(line => {
+                        var log = document.createTextNode(line);
+                        logDiv.appendChild(log);
+                        logDiv.appendChild(document.createElement('br'));
+                    });
+    
+                    logDiv.appendChild(document.createTextNode("학습이 완료되었습니다."));
+                    logDiv.appendChild(document.createElement('br'));
+                }
+            });
+        }
     }
 
     

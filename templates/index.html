@@ -16,8 +16,10 @@
     <script src="{{url_for('static', filename = 'trainModel.js')}}"></script>
     <script src="{{url_for('static', filename = 'handleResponse.js')}}"></script>
     <!-- <script src="{{url_for('static', filename = 'tooltip.js')}}"></script> -->
+    <script src="{{url_for('static', filename = 'speechRecognition.js')}}"></script>
     <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+
 
     <div class="container">
         <!-- Layer select button, Node selection Div containers -->
@@ -26,36 +28,49 @@
                 <button id="input-layer-button"><img src="{{url_for('static', filename = 'res/input.svg')}}"><br>입력</button>
                 <button id="hidden-layer-button"><img src="{{url_for('static', filename = 'res/layers.svg')}}"><br>모델 쌓기</button>
                 <button id="run-layer-button"><img src="{{url_for('static', filename = 'res/output.svg')}}"><br>출력</button>
+                
             </div>
             <!-- Input layer -->
             <div id="layer1" style="display: none">
                 <div class="node-boxes" id="input-number">
                     <p class="text">시작값과 목표값을 입력해주세요</p>
-                    <div class="input-boxes"><label for="x">X:</label><input type="text" id='x' name="x" size="20" placeholder="콤마(,)로 구분된 숫자" required/></div>
-                    <div class="input-boxes"><label for="y">Y:</label><input type="text" id='y' name="y" size="20" placeholder="콤마(,)로 구분된 숫자" required/></div>
+                    <div class="input-boxes"><label for="x">X:</label><input type="text" id='x' name="x" size="20" placeholder="콤마(,)로 구분된 숫자" required disabled/></div>
+                    <div class="input-boxes"><label for="y">Y:</label><input type="text" id='y' name="y" size="20" placeholder="콤마(,)로 구분된 숫자" required disabled/></div>
+                </div>
+                <div class="node-boxes" id="input-number-file">
+                    <p class="text" style="font-size: 12px;">시작값과 목표값 파일을 선택해주세요</p>
+                    <label for="x-file">X:</label><input type="file" accept="text/plain" id="x-file" disabled/>
+                    <label for="y-file">Y:</label><input type="file" accept="text/plain" id="y-file" disabled/>
                 </div>
                 <div class="node-boxes" id="input-number-logistic">
                     <p class="text">조건값과 클래스값을 입력해주세요</p>
-                    <div class="input-boxes"><label for="class">분류할 클래스 개수:</label><input type="text" id='class' name="x" size="5" placeholder="숫자" required/></div>
-                    <div class="input-boxes"><label for="x-log">조건값:</label><input type="text" id='x-log' name="x-log" size="20" placeholder="콤마(,)로 구분된 숫자" required/></div>
-                    <div class="input-boxes"><label for="y-log">클래스:</label><input type="text" id='y-log' name="y-log" size="20" placeholder="콤마(,)로 구분된 클래스 번호" required/></div>
+                    <div class="input-boxes"><label for="class">분류할 클래스 개수:</label><input type="text" id='class' name="x" size="5" placeholder="숫자" required disabled/></div>
+                    <div class="input-boxes"><label for="x-log">조건값:</label><input type="text" id='x-log' name="x-log" size="20" placeholder="콤마(,)로 구분된 숫자" required disabled/></div>
+                    <div class="input-boxes"><label for="y-log">클래스:</label><input type="text" id='y-log' name="y-log" size="20" placeholder="콤마(,)로 구분된 클래스 번호" required disabled/></div>
                 </div>
                 <div class="node-boxes" id="input-image">
                     <p class="text">이미지를 선택해주세요</p>
-                    <input type="file" id='img' name="img" accept="image/*"/>
+                    <input type="file" id='img' name="img" accept="image/*" disabled/>
                 </div>
                 <div class="node-boxes" id="input-text">
                     <p class="text">질문을 입력해주세요</p>
-                    <div class="input-boxes"><input id="text" name="text" size="20" placeholder="예)안녕? 너는 누구니?" required/></div>
+                    <div class="input-boxes"><input id="text" name="text" size="20" placeholder="예)안녕? 너는 누구니?" required disabled/></div>
                 </div>
+                <div class="node-boxes" id="input-audio">
+                    <p class="text">음성지원입니다</p>
+                    <button id="recordButton" disabled>음성 녹음 시작,중지</button>
+                    <p id="transcription">여기에 인식된 텍스트가 표시됩니다.</p>
+                    <p id="recordingIndicator" style="display: none; color: red;">녹음 중...</p>
+                </div>
+                
             </div>
             <!-- Hidden layer -->
             <div id="layer2" style="display: none">
                 <div class="node-boxes" id="hidden-dense1">
                     <p class="text">뉴런</p>
-                    <p class="text">사용할 뉴런 개수: <input type='number' id="units1" name="units" min="1" max="50" required/></p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units1" name="units" min="1" max="50" required disabled/></p>
                     <p class="text">사용할 활성화 함수: 
-                        <select id="activationFunc1" >
+                        <select id="activationFunc1" disabled>
                             <option value="sigmoid">시그모이드</option>
                             <option value="relu">ReLU</option>
                         </select>
@@ -63,9 +78,9 @@
                 </div>
                 <div class="node-boxes" id="hidden-dense2">
                     <p class="text">뉴런</p>
-                    <p class="text">사용할 뉴런 개수: <input type='number' id="units2" name="units" min="1" max="50" required/></p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units2" name="units" min="1" max="50" required disabled/></p>
                     <p class="text">사용할 활성화 함수: 
-                        <select id="activationFunc2" >
+                        <select id="activationFunc2" disabled>
                             <option value="sigmoid">시그모이드</option>
                             <option value="relu">ReLU</option>
                         </select>
@@ -73,9 +88,9 @@
                 </div>
                 <div class="node-boxes" id="hidden-dense3">
                     <p class="text">뉴런</p>
-                    <p class="text">사용할 뉴런 개수: <input type='number' id="units3" name="units" min="1" max="50" required/></p>
+                    <p class="text">사용할 뉴런 개수: <input type='number' id="units3" name="units" min="1" max="50" required disabled/></p>
                     <p class="text">사용할 활성화 함수: 
-                        <select id="activationFunc3" >
+                        <select id="activationFunc3" disabled>
                             <option value="sigmoid">시그모이드</option>
                             <option value="relu">ReLU</option>
                         </select>
@@ -96,6 +111,7 @@
                 <div class="node-boxes">
                     <input type="submit" class="submit-button" id="query-model" name="query-model" value="모델에 질문하기" disabled/>
                 </div>
+                
             </div>
         </div>
 
@@ -133,50 +149,41 @@
 
     <!-- SortableJS implementation -->
     <script>
-        Sortable.create(layer1, {
-            sort: false,
-            group: {
-                name: 'input_layer',
-                //pull: 'clone',
-                //put: true
-            },
+        $(document).ready(function() {
+            // Sortable 설정
+            Sortable.create(layer1, {
+                sort: false,
+                group: {
+                    name: 'input_layer',
+                },
+            });
+    
+            Sortable.create(layer2, {
+                sort: false,
+                group: {
+                    name: 'hidden_layer',
+                    pull: true,
+                }
+            });
+    
+            Sortable.create(layer3, {
+                sort: false,
+                group: {
+                    name: 'run_layer',
+                    pull: true,
+                }
+            });
+    
+            Sortable.create(constructModel, {
+                sort: false,
+                group: {
+                    name: 'constructed',
+                    pull: true,
+                    put: true
+                },
+                animation: 100,
+            });
         });
-
-        Sortable.create(layer2, {
-            sort: false,
-            group: {
-                name: 'hidden_layer',
-                pull: true,
-                //put: true
-            }
-        });
-
-        Sortable.create(layer3, {
-            sort: false,
-            group: {
-                name: 'run_layer',
-                pull: true,
-                //put: true
-            }
-        });
-
-        Sortable.create(constructModel, {
-            sort: false,
-            group: {
-                name: 'constructed',
-                pull: true,
-                put: true
-            },
-            animation: 100,
-            // onEnd: function(evt) {
-            //     var item = evt.item;
-            //     if(evt.to.id === 'layer1'){
-            //         evt.to.removeChild(item);
-            //     }
-            // }
-        });
-
-
     </script>
     
 </body>
