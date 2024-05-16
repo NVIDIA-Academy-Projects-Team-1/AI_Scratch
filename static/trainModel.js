@@ -100,7 +100,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
         // Data aggregation and server requesting
-
         if(parent.querySelector("#input-number") || parent.querySelector("#input-number-logistic")){
             var data = {
                 type: "number",
@@ -195,12 +194,21 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
+        if(parent.querySelector("#input-audio")){
+            text_val = document.getElementById("transcription").innerHTML;
+            if(text_val == "응답을 받아오는 중 오류가 발생했습니다."){
+                alert("음성이 제대로 인식되지 않았습니다.");
+                return;
+            }
+        }
+
         var formData = new FormData();
 
         if(parent.querySelector("#input-image") != null){
             if(img_val == null){
                 alert('선택된 이미지가 없습니다. 이미지를 선택해주세요.');
-            } else{
+            }
+            else{
                 formData.append('type','image');
                 formData.append('img', img_val);
             }

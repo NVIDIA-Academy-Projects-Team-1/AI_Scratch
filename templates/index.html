@@ -31,6 +31,9 @@
                 
             </div>
             <!-- Input layer -->
+            
+            <!-- <div id="model-log"></div> -->
+
             <div id="layer1" style="display: none">
                 <div class="node-boxes" id="input-number">
                     <p class="text">시작값과 목표값을 입력해주세요</p>
@@ -57,8 +60,8 @@
                     <div class="input-boxes"><input id="text" name="text" size="20" placeholder="예)안녕? 너는 누구니?" required disabled/></div>
                 </div>
                 <div class="node-boxes" id="input-audio">
-                    <p class="text">음성지원입니다</p>
-                    <button id="recordButton" disabled>음성 녹음 시작,중지</button>
+                    <p class="text">음성인식</p>
+                    <button id="recordButton" disabled>녹음 시작,중지</button>
                     <p id="transcription">여기에 인식된 텍스트가 표시됩니다.</p>
                     <p id="recordingIndicator" style="display: none; color: red;">녹음 중...</p>
                 </div>
@@ -111,7 +114,6 @@
                 <div class="node-boxes">
                     <input type="submit" class="submit-button" id="query-model" name="query-model" value="모델에 질문하기" disabled/>
                 </div>
-                
             </div>
         </div>
 
@@ -139,6 +141,7 @@
                     <div id="num-test-output"></div>
                 </div>
             </div>
+            
         </div>
 
     </div>
@@ -185,6 +188,7 @@
             });
         });
     </script>
+    
     
 </body>
 </html>

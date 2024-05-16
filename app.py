@@ -4,33 +4,29 @@
 ## MODULE IMPORTS ##
 import tensorflow as tf
 import numpy as np
+import pandas as np
 import re
-import json
-import torch
-import math
 import cv2 as cv
-import time
 import os
 import ollama
 import speech_recognition as sr
-import pyaudio
-import soundfile
-import io
-
 
 from tensorflow import keras
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Flatten
+from tensorflow.keras.layers import Input, Dense
 from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, stream_with_context, send_from_directory
 from werkzeug.utils import secure_filename
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
-from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
 from PIL import Image
-
+from openai import OpenAI
+from datetime import datetime
+from flask_socketio import SocketIO, emit
 
 ## GLOBAL FIELD ##
 app = Flask(__name__)
+SocketIO = SocketIO(app)
+
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -46,7 +42,6 @@ vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes = 1000)
 def init():
     return render_template('index.html')
 
-
 @app.route("/data", methods = ["POST"])
 def fetch_data():
     global data
@@ -59,8 +54,8 @@ def fetch_data():
     if data['type'] == 'number' or data['type'] == 'number-file':
         if data['type'] == 'number-file':
             regexp = r'^[0-9,]+$'
-            parsed_x = request.files['x_file'].read().decode('utf-8')
-            parsed_y = request.files['y_file'].read().decode('utf-8')
+            parsed_x = request.files['x_file'].read().decode('utf-8').replace('\n', ',')
+            parsed_y = request.files['y_file'].read().decode('utf-8').replace('\n', ',')
             data = request.form.to_dict()
 
             if re.match(regexp, parsed_x) is None or re.match(regexp, parsed_y) is None:
@@ -94,22 +89,19 @@ def audio_to_text():
     recognizer = sr.Recognizer()
     audio_file = request.files['audio'].read()
 
-    # with open('audio.wav', 'wb') as f:
-    #     f.write(audio_file)
-    
-    # data, samplerate = soundfile.read('/Users/jaeh/Documents/NVIDIA_AI_Academy/AI_Scratch/audio.wav')
-    # soundfile.write(audio_file, data, samplerate, subtype = 'PCM_16')
+    print("fetchted audio: ", len(audio_file))
 
-    with io.BytesIO(audio_file) as f:
-        data, samplerate = soundfile.read(f)
-        soundfile.write('audio.wav', data, samplerate)
-    
+    with open('audio.opus', 'wb') as f:
+        f.write(audio_file)
+
+    os.system(f'ffmpeg -y -i "audio.opus" -vn "audio.wav"')
+
     with sr.AudioFile('audio.wav') as source:
         audio = recognizer.record(source)
 
     try:
         text = recognizer.recognize_google(audio, language='ko-KR')
-        print('인식된 음성은 : {}'.format(text))
+        print("Recognised text: ", text)
         return jsonify({'text': text})
     except sr.UnknownValueError:
         print("Recognition error")
@@ -230,6 +222,7 @@ def uploads_file(filename):
 
 
 @app.route("/response", methods = ["GET"])
+
 def process_image():
     img=load_img(upload_img_path,target_size=(224,224))
     img=img_to_array(img)
@@ -261,12 +254,16 @@ def process_image():
     print('generated text: ', response['message']['content'], 'acc: %.2f' % float(label[2]*100))
 
     return jsonify({'response': response['message']['content'], 'image_path':upload_img_path})
-    # return jsonify({'response':result, 'image_path':upload_img_path})
 
 
 @app.route("/response", methods=["GET"])
 def createResponse():
     content = data['text']
+    #
+    question = content
+    #
+
+    print("Fetched content: ", content)
     
     response = ollama.chat(model = 'llama3', messages = [
             {
@@ -284,14 +281,65 @@ def createResponse():
         ],
     )
 
-    if response['message']['content'].startswith('I cannot provide'):
+    if 'I cannot provide' in response['message']['content']:
         original_answer = "죄송합니다. 해당 질문에 대한 답변은 해 드릴 수 없습니다."
     else:
         original_answer = response['message']['content']
 
     print("Original Answer : ", original_answer)
+    #
+    answer = original_answer
+    log_interaction(question, answer)
+    #
+    
     return jsonify({'response': original_answer})
+#
+def log_interaction(question, answer):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    with open('interaction_log.txt', 'a') as f:
+        f.write(f"{current_time} - 질문: {question}\n")
+        f.write(f"{current_time} - 답변: {answer}\n")
+        f.write("\n")
 
+@socketio.on('new_interaction')
+def handle_interaction(data):
+    question = data['question']
+    answer = data['answer']
+    emit('new_interaction', {'question': question, 'answer': answer}, broadcast=True)
+
+
+#        
+
+@app.route("/response", methods=["POST"])
+def record_conversation():
+    question = request.form.get('text')
+
+    response = ollama.chat(model='llama3', messages=[{'role': 'user', 'content': question}])
+
+    answer = response['message']['content']
+
+    log_interaction(question, answer)
+
+    if 'image_path' in response:
+        image_path = response['image_path']
+        return jsonify({'response': answer, 'image_path': image_path})
+    else:
+        return jsonify({'response': answer})
+
+def log_interaction(question, answer):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    with open('interaction_log.txt', 'a') as f:
+        f.write(f"{current_time} - 질문: {question}\n")
+        f.write(f"{current_time} - 답변: {answer}\n")
+        f.write("\n")
+
+@socketio.on('new_interaction')
+def handle_interaction(data):
+    question = data['question']
+    answer = data['answer']
+    emit('new_interaction', {'question': question, 'answer': answer}, broadcast=True)
 
 ## RUN FLASK APP ##
 if __name__ == "__main__":
