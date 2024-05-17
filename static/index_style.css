@@ -126,12 +126,10 @@ ul {
     font-size: 11px;
 }
 
-#img {
-    margin-left: 20px;
-}
-
+#img,
 #x-file,
-#y-file {
+#y-file,
+#csv-file {
     margin-left: 20px;
 }
 

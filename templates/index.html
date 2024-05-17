@@ -15,8 +15,8 @@
     <script src="{{url_for('static', filename = 'testHandler.js')}}"></script>
     <script src="{{url_for('static', filename = 'trainModel.js')}}"></script>
     <script src="{{url_for('static', filename = 'handleResponse.js')}}"></script>
-    <!-- <script src="{{url_for('static', filename = 'tooltip.js')}}"></script> -->
     <script src="{{url_for('static', filename = 'speechRecognition.js')}}"></script>
+    <!-- <script src="{{url_for('static', filename = 'tooltip.js')}}"></script> -->
     <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 
@@ -28,7 +28,6 @@
                 <button id="input-layer-button"><img src="{{url_for('static', filename = 'res/input.svg')}}"><br>입력</button>
                 <button id="hidden-layer-button"><img src="{{url_for('static', filename = 'res/layers.svg')}}"><br>모델 쌓기</button>
                 <button id="run-layer-button"><img src="{{url_for('static', filename = 'res/output.svg')}}"><br>출력</button>
-                
             </div>
             <!-- Input layer -->
             
@@ -44,6 +43,10 @@
                     <p class="text" style="font-size: 12px;">시작값과 목표값 파일을 선택해주세요</p>
                     <label for="x-file">X:</label><input type="file" accept="text/plain" id="x-file" disabled/>
                     <label for="y-file">Y:</label><input type="file" accept="text/plain" id="y-file" disabled/>
+                </div>
+                <div class="node-boxes" id="input-csv-file">
+                    <p class="text">CSV 파일을 선택해주세요</p>
+                    <input type="file" accept=".csv" id="csv-file" disabled/>
                 </div>
                 <div class="node-boxes" id="input-number-logistic">
                     <p class="text">조건값과 클래스값을 입력해주세요</p>
@@ -153,7 +156,6 @@
     <!-- SortableJS implementation -->
     <script>
         $(document).ready(function() {
-            // Sortable 설정
             Sortable.create(layer1, {
                 sort: false,
                 group: {
@@ -186,9 +188,8 @@
                 },
                 animation: 100,
             });
-        });
+            });
+        
     </script>
-    
-    
 </body>
 </html>

@@ -4,7 +4,7 @@
 ## MODULE IMPORTS ##
 import tensorflow as tf
 import numpy as np
-import pandas as np
+import pandas as pd
 import re
 import cv2 as cv
 import os
@@ -21,11 +21,9 @@ from tensorflow.keras.preprocessing.image import img_to_array, load_img
 from PIL import Image
 from openai import OpenAI
 from datetime import datetime
-from flask_socketio import SocketIO, emit
 
 ## GLOBAL FIELD ##
 app = Flask(__name__)
-SocketIO = SocketIO(app)
 
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
@@ -36,6 +34,17 @@ model = None
 
 vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes = 1000)
 
+#
+def log_interaction(question, answer):
+    # 현재 시간 기록
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # 로그 형식에 맞게 질문과 답변 기록
+    with open('interaction_log.txt', 'a') as f:
+        f.write(f"{current_time} - Question: {question}\n")
+        f.write(f"{current_time} - Answer: {answer}\n")
+        f.write("\n")
+#
 
 ## FLASK APP ROUTES ##
 @app.route("/", methods = ['POST','GET'])
@@ -45,7 +54,7 @@ def init():
 @app.route("/data", methods = ["POST"])
 def fetch_data():
     global data
-    global upload_img_path, image, filename
+    global upload_img_path, upload_csv_path, image, filename
     data = request.form
     print('==========  fetch_data called  ==========')
     print(data)
@@ -53,7 +62,7 @@ def fetch_data():
     
     if data['type'] == 'number' or data['type'] == 'number-file':
         if data['type'] == 'number-file':
-            regexp = r'^[0-9,]+$'
+            regexp = r'^[0-9,-.]+$'
             parsed_x = request.files['x_file'].read().decode('utf-8').replace('\n', ',')
             parsed_y = request.files['y_file'].read().decode('utf-8').replace('\n', ',')
             data = request.form.to_dict()
@@ -67,6 +76,14 @@ def fetch_data():
             return process_number()
         else:
             return process_number_logistic()
+
+    elif data['type'] == 'csv-file':
+        csv_file = request.files['csv_file']
+        filename = secure_filename(csv_file.filename)
+        upload_csv_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        csv_file.save(upload_csv_path)
+        return process_csv()
+        
     
     elif data['type'] == 'image':
         image = request.files['img']
@@ -119,7 +136,7 @@ def fetch_test_data():
         for x in x_data:
             pred = model.predict(x, verbose = 0)
             print(pred)
-            yield f"{int(x[0])}에 대한 예측값은 {round(float(pred[0][0]))}입니다.\n"
+            yield f"{x[0]}에 대한 예측값은 {round(float(pred[0][0]))}입니다.\n"
     return Response(pred())
 
 
@@ -154,7 +171,7 @@ def process_number():
     model = Model(inputs = input, outputs = output)
     model.summary()
 
-    optimizer = keras.optimizers.Adam()
+    optimizer = keras.optimizers.legacy.Adam()
     lossFunc = keras.losses.MeanSquaredError()
             
     def train():
@@ -172,7 +189,7 @@ def process_number():
     return Response(train())
 
 
-@app.route("/responser", methods = ["GET"])
+@app.route("/response", methods = ["GET"])
 def process_number_logistic():
     global model
     x_data = np.array([[float(i)] for i in data['x_log'].split(',')])
@@ -195,7 +212,7 @@ def process_number_logistic():
     model = Model(inputs = input, outputs = output)
     model.summary()
 
-    optimizer = keras.optimizers.Adam()
+    optimizer = keras.optimizers.legacy.Adam()
     lossFunc = keras.losses.SparseCategoricalCrossentropy(from_logits = True)
     acc = keras.metrics.SparseCategoricalAccuracy()
     
@@ -216,13 +233,134 @@ def process_number_logistic():
     return Response(train())
 
 
+@app.route("/response", methods = ["GET"])
+def process_csv():
+
+    data = pd.read_csv(upload_csv_path, header = None)
+    data = data.dropna(axis = 0)
+
+    with open(upload_csv_path) as f:
+        content = f.readline()
+    f.close()
+
+    response = ollama.chat(model = 'llama3', messages = [
+            {
+                'role' : 'system',
+                'content' : 'You are a helpful discriminator classifying if given row of a CSV dataset is related to linear-regression or logistic-regression. Target data is always located at the last. You must reply either Logistic or Linear no matter what.',
+            },
+            {
+                'role' : 'system',
+                'content' : 'If target data is text or integer, it is logistic regression. If target data is float, it is linear regression.'
+            },
+            {
+                'role' : 'user',
+                'content' : f'{content}',
+            }
+        ],
+    )
+
+    print("dataset row :",content)
+    print("ollama response : ", response['message']['content'])
+
+
+    ## Train Logistic Regression Dataset ##
+    if response['message']['content'] == 'Logistic':
+        x = data.iloc[:, :-1]
+        y = data.iloc[:, -1]
+
+        objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+        print("object column : ", objectCol)
+        
+        train_x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+        train_y = pd.get_dummies(y, dtype = int)
+
+        dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y)).shuffle(len(train_x)).batch(32)
+
+        print("data shape: ", train_x.shape, train_y.shape)
+        print("x shape : ", train_x.shape[1])
+
+        input = Input(shape = (train_x.shape[1], ), batch_size = 32)
+        x = Dense(32, activation = "relu")(input)
+        x = Dense(64, activation = "relu")(x)
+        output = Dense(train_y.shape[1], activation = "softmax")(x)
+
+        model = Model(inputs = input, outputs = output)
+        model.summary()
+
+        optimizer = tf.keras.optimizers.legacy.Adam()
+        lossFunc = tf.keras.losses.CategoricalCrossentropy()
+        acc = tf.keras.metrics.CategoricalAccuracy()
+
+        def train():
+            for i in range(10):
+                for x, y in dataset:
+                    with tf.GradientTape() as tape:
+                        logit = model(x, training = True)
+                        loss = lossFunc(y, logit)
+                        
+                    grad = tape.gradient(loss, model.trainable_weights)
+                    optimizer.apply_gradients(zip(grad, model.trainable_weights))
+                    acc.update_state(y, logit)
+
+                accuracy = acc.result()
+                print(f"epoch {i + 1} done, accuracy {float(accuracy) * 100:.4f}%")
+                yield f"현재 모델은 {i + 1}번째 학습중이며, 정확도는 {float(accuracy * 100):.2f}% 입니다.\n"
+        
+        return Response(train())
+
+    ## Train Linear Regression Dataset ##
+    elif response['message']['content'] == 'Linear':
+        x = data.iloc[:, :-1]
+        train_y = data.iloc[:, -1]
+
+        objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+        print("object column : ", objectCol)
+        
+        train_x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+
+        dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y)).shuffle(len(train_x)).batch(32)
+
+        print("data shape: ", train_x.shape, train_y.shape)
+        print("x shape : ", train_x.shape[1])
+
+        input = Input(shape = (train_x.shape[1], ), batch_size = 32)
+        x = Dense(32, activation = "relu")(input)
+        x = Dense(64, activation = "relu")(x)
+        output = Dense(1)(x)
+
+        model = Model(inputs = input, outputs = output)
+        model.summary()
+
+        optimizer = tf.keras.optimizers.legacy.Adam()
+        lossFunc = tf.keras.losses.MeanSquaredError()
+
+        def train():
+            for i in range(10):
+                for x, y in dataset:
+                    with tf.GradientTape() as tape:
+                        logit = model(x, training = True)
+                        loss = lossFunc(y, logit)
+                        
+                    grad = tape.gradient(loss, model.trainable_weights)
+                    optimizer.apply_gradients(zip(grad, model.trainable_weights))
+
+                print(f"epoch {i + 1} done, loss {float(loss)}")
+                yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f} 입니다.\n"
+        
+        return Response(train())
+
+    ## Error From Ollama Output ##
+    else:
+        print("Ollama failed to classify dataset", response['message']['content'])
+        return jsonify({"alert": "Ollama failed to classify dataset"})
+
+
 @app.route('/uploads/<filename>')
 def uploads_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
 
 
 @app.route("/response", methods = ["GET"])
-
 def process_image():
     img=load_img(upload_img_path,target_size=(224,224))
     img=img_to_array(img)
@@ -259,16 +397,13 @@ def process_image():
 @app.route("/response", methods=["GET"])
 def createResponse():
     content = data['text']
-    #
-    question = content
-    #
 
     print("Fetched content: ", content)
     
     response = ollama.chat(model = 'llama3', messages = [
             {
                 'role' : 'system',
-                'content' : 'You are a helpful AI responding to Korean users. You must create response in Korean language no matter what.',
+                'content' : 'You are a helpful AI responding to Korean users. You must create response only in Korean language no matter what.',
             },
             {
                 'role' : 'system',
@@ -287,59 +422,9 @@ def createResponse():
         original_answer = response['message']['content']
 
     print("Original Answer : ", original_answer)
-    #
-    answer = original_answer
-    log_interaction(question, answer)
-    #
+
     
-    return jsonify({'response': original_answer})
-#
-def log_interaction(question, answer):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    with open('interaction_log.txt', 'a') as f:
-        f.write(f"{current_time} - 질문: {question}\n")
-        f.write(f"{current_time} - 답변: {answer}\n")
-        f.write("\n")
-
-@socketio.on('new_interaction')
-def handle_interaction(data):
-    question = data['question']
-    answer = data['answer']
-    emit('new_interaction', {'question': question, 'answer': answer}, broadcast=True)
-
-
-#        
-
-@app.route("/response", methods=["POST"])
-def record_conversation():
-    question = request.form.get('text')
-
-    response = ollama.chat(model='llama3', messages=[{'role': 'user', 'content': question}])
-
-    answer = response['message']['content']
-
-    log_interaction(question, answer)
-
-    if 'image_path' in response:
-        image_path = response['image_path']
-        return jsonify({'response': answer, 'image_path': image_path})
-    else:
-        return jsonify({'response': answer})
-
-def log_interaction(question, answer):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    with open('interaction_log.txt', 'a') as f:
-        f.write(f"{current_time} - 질문: {question}\n")
-        f.write(f"{current_time} - 답변: {answer}\n")
-        f.write("\n")
-
-@socketio.on('new_interaction')
-def handle_interaction(data):
-    question = data['question']
-    answer = data['answer']
-    emit('new_interaction', {'question': question, 'answer': answer}, broadcast=True)
+    return jsonify({'response': original_answer})      
 
 ## RUN FLASK APP ##
 if __name__ == "__main__":
