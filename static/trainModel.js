@@ -318,6 +318,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     img.style.height = 'auto';
                     logDiv.innerHTML = '';
                     logDiv.appendChild(img);
+                    logDiv.appendChild(document.createElement('br'));
                     logDiv.appendChild(responseText);
                 }
             });

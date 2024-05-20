@@ -10,6 +10,8 @@ import cv2 as cv
 import os
 import ollama
 import speech_recognition as sr
+import matplotlib.pyplot as plt
+import mpld3
 
 from tensorflow import keras
 from tensorflow.keras import Model
@@ -31,20 +33,12 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 
 data = None
 model = None
+label = []
+type = None
+encoded_cols = None
 
 vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes = 1000)
 
-#
-def log_interaction(question, answer):
-    # 현재 시간 기록
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # 로그 형식에 맞게 질문과 답변 기록
-    with open('interaction_log.txt', 'a') as f:
-        f.write(f"{current_time} - Question: {question}\n")
-        f.write(f"{current_time} - Answer: {answer}\n")
-        f.write("\n")
-#
 
 ## FLASK APP ROUTES ##
 @app.route("/", methods = ['POST','GET'])
@@ -127,16 +121,60 @@ def audio_to_text():
 
 @app.route("/testdata", methods = ["POST"])
 def fetch_test_data():
+    global label, type, model, encoded_cols
     test_data = request.form
 
-    x_data = np.array([[float(i)] for i in test_data['x'].split(',')])
-    x_data = tf.data.Dataset.from_tensor_slices(x_data)
+    if test_data['type'] == 'plain':
+        x_data = np.array([[float(i)] for i in test_data['x'].split(',')])
+        x_data = tf.data.Dataset.from_tensor_slices(x_data)
 
-    def pred():
-        for x in x_data:
-            pred = model.predict(x, verbose = 0)
-            print(pred)
-            yield f"{x[0]}에 대한 예측값은 {round(float(pred[0][0]))}입니다.\n"
+        def pred():
+            for x in x_data:
+                pred = model.predict(x, verbose = 0)
+                print(pred)
+                yield f"{x[0]}에 대한 예측값은 {round(float(pred[0][0]))}입니다.\n"
+
+    elif test_data['type'] == 'csv':
+        x = pd.DataFrame(test_data['x'].split(',')).T
+        print(x, x.shape)
+        
+        if type == 'Linear':
+            for col in x.columns:
+                x[col] = pd.to_numeric(x[col], errors = 'ignore')
+            print(x.info())
+            objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+            print("objectcol len: ", len(objectCol))
+            if len(objectCol) != 0:
+                x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+                x = x.reindex(columns = encoded_cols)
+            @stream_with_context
+            def pred():
+                try:
+                    pred = model.predict(x, verbose = 0)
+                    print(pred)
+                    yield f"{test_data['x']}에 대한 예측값은 {round(float(pred[0][0]))}입니다.\n"
+                except:
+                    yield "입력값이 올바르지 않습니다."
+
+        elif type == 'Logistic':
+            for col in x.columns:
+                x[col] = pd.to_numeric(x[col], errors = 'ignore')
+            print(x.info())
+            objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+            print("objectcol len: ", len(objectCol))
+            if len(objectCol) != 0:
+                x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+                x = x.reindex(columns = encoded_cols)
+            print("x :\n", x)
+            @stream_with_context
+            def pred():
+                try:
+                    pred = model.predict(x, verbose = 0)
+                    print(pred)
+                    print(label)
+                    yield f"{test_data['x']}에 대한 예측값은 {label[np.argmax(pred[0])]}입니다.\n"
+                except:
+                    yield "입력값이 올바르지 않습니다."
     return Response(pred())
 
 
@@ -235,43 +273,25 @@ def process_number_logistic():
 
 @app.route("/response", methods = ["GET"])
 def process_csv():
+    global label, type, model, encoded_cols
 
-    data = pd.read_csv(upload_csv_path, header = None)
-    data = data.dropna(axis = 0)
+    csv_data = pd.read_csv(upload_csv_path, header = None, skiprows = [0])
+    csv_data = csv_data.dropna(axis = 0)
 
-    with open(upload_csv_path) as f:
-        content = f.readline()
-    f.close()
-
-    response = ollama.chat(model = 'llama3', messages = [
-            {
-                'role' : 'system',
-                'content' : 'You are a helpful discriminator classifying if given row of a CSV dataset is related to linear-regression or logistic-regression. Target data is always located at the last. You must reply either Logistic or Linear no matter what.',
-            },
-            {
-                'role' : 'system',
-                'content' : 'If target data is text or integer, it is logistic regression. If target data is float, it is linear regression.'
-            },
-            {
-                'role' : 'user',
-                'content' : f'{content}',
-            }
-        ],
-    )
-
-    print("dataset row :",content)
-    print("ollama response : ", response['message']['content'])
-
+    type = 'Linear' if csv_data.iloc[:, -1].dtype == 'float64' else 'Logistic'
+    print("Data : ", csv_data.iloc[0], "\nTarget data type : ", csv_data.iloc[:, -1].dtype)
 
     ## Train Logistic Regression Dataset ##
-    if response['message']['content'] == 'Logistic':
-        x = data.iloc[:, :-1]
-        y = data.iloc[:, -1]
+    if type == 'Logistic':
+        x = csv_data.iloc[:, :-1]
+        y = csv_data.iloc[:, -1]
+        label = csv_data.iloc[:, -1].unique()
 
         objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
         print("object column : ", objectCol)
         
         train_x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+        encoded_cols = train_x.columns
         train_y = pd.get_dummies(y, dtype = int)
 
         dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y)).shuffle(len(train_x)).batch(32)
@@ -309,9 +329,9 @@ def process_csv():
         return Response(train())
 
     ## Train Linear Regression Dataset ##
-    elif response['message']['content'] == 'Linear':
-        x = data.iloc[:, :-1]
-        train_y = data.iloc[:, -1]
+    elif type == 'Linear':
+        x = csv_data.iloc[:, :-1]
+        train_y = csv_data.iloc[:, -1]
 
         objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
         print("object column : ", objectCol)
@@ -349,49 +369,54 @@ def process_csv():
         
         return Response(train())
 
-    ## Error From Ollama Output ##
+    ## Error classifying ##
     else:
-        print("Ollama failed to classify dataset", response['message']['content'])
-        return jsonify({"alert": "Ollama failed to classify dataset"})
+        print("Failed to classify dataset with target type: ", type)
+        return jsonify({"alert": "CSV파일 읽기에 실패했습니다."})
 
 
 @app.route('/uploads/<filename>')
 def uploads_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 @app.route("/response", methods = ["GET"])
 def process_image():
-    img=load_img(upload_img_path,target_size=(224,224))
-    img=img_to_array(img)
-    img=img.astype('float32')
-    img=img.reshape((1,img.shape[0],img.shape[1],img.shape[2]))
-    img=preprocess_input(img)
+    img = load_img(upload_img_path, target_size = (224, 224))
+    img = img_to_array(img)
+    img = img.astype('float32')
+    img = img.reshape((1, img.shape[0], img.shape[1], img.shape[2]))
+    img = preprocess_input(img)
 
-    pre=vgg16_model.predict(img, verbose = 0)
-    label=decode_predictions(pre)
-    label=label[0][0]
-    result=(f' 예측한 사진의 종류는 {label[1]} 이고 예측 정확도는 {float(label[2]*100):.2f} 입니다.')
+    pre = vgg16_model.predict(img, verbose = 0)
+    result = decode_predictions(pre)[0][0]
+    label = result[1].replace('_', ' ')
+    acc = result[2]
+    print("result : ", result)
+    print("original label : ", label)
 
-    content = result
-
-    response = ollama.chat(model = 'llama3',messages=[
-        {
-            'role' : 'system',
-            'content' : 'You are a helpful AI responding to Korean users. You must create response in Korean language no matter what.',
-        },
-        {
-            'role' : 'system',
-            'content' : "Translate English word, which is from imagenet dataset label, to Korean in given content. You must reply as '예측한 사진의 종류는 <your_translation>이고 예측 정확도는 <accuracy_in_given_content>% 입니다."
-        },
+    response = ollama.chat(model = 'thinkverse/towerinstruct',messages=[
+        # {
+        #     'role' : 'system',
+        #     'content' : 'You are a helpful AI translator translating from English to Korean. You must create response only in Korean language no matter what.',
+        # },
+        # {
+        #     'role' : 'system',
+        #     'content' : 'Translate English label, which is from imagenet dataset label, to Korean in given content.'
+        # },
+        # {
+        #     'role' : 'user',
+        #     'content' : f'{label}',
+        # }
         {
             'role' : 'user',
-            'content' : f'{content}',
+            'content' : f'Translate the following text from English into Korean.\nEnglish: {label}.\nKorean:'
         }
     ])
-    print('generated text: ', response['message']['content'], 'acc: %.2f' % float(label[2]*100))
 
-    return jsonify({'response': response['message']['content'], 'image_path':upload_img_path})
+    print('generated text: ', response['message']['content'], 'acc: %.2f' % float(acc * 100))
+    text = f"예측한 사진의 종류는 {response['message']['content'].replace('.', '')}이고, 예측 정확도는 {float(acc * 100):.2f}% 입니다."
+    return jsonify({'response': text, 'image_path':upload_img_path})
 
 
 @app.route("/response", methods=["GET"])
@@ -407,7 +432,7 @@ def createResponse():
             },
             {
                 'role' : 'system',
-                'content' : 'You must not response to question related to drugs or other sensitive subjetcs. When you receive questions as mentioned before, answer "죄송합니다. 해당 질문에 대한 답변은 해 드릴 수 없습니다.".'
+                'content' : 'You must not response to question related to drugs or other sensitive subjetcs. When you receive questions as mentioned before, answer 죄송합니다. 해당 질문에 대한 답변은 해 드릴 수 없습니다.'
             },
             {
                 'role' : 'user',
@@ -425,6 +450,7 @@ def createResponse():
 
     
     return jsonify({'response': original_answer})      
+
 
 ## RUN FLASK APP ##
 if __name__ == "__main__":

@@ -158,7 +158,7 @@ ul {
         linear-gradient(var(--dot-bg) calc(var(--dot-space) - var(--dot-size)), transparent 1%) center / var(--dot-space) var(--dot-space),
         var(--dot-color);
     width: 100%;
-    height: 80%;
+    height: 100%;
     overflow-y: scroll;
 }
 
@@ -177,13 +177,13 @@ ul {
     right: 20px;
 }
 
-#layer-description {
+/* #layer-description {
     width: 100%;
     height: 20%;
     background-color: rgb(255, 247, 203);
     border-radius: 5px;
     position: relative;
-}
+} */
 
 .output {
     width: 30%;
@@ -199,7 +199,7 @@ ul {
     border-radius: 5px;
     font-size: 13px;
     overflow-y: scroll;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     line-height: 2;
 }
 

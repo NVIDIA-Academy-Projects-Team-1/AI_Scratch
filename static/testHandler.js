@@ -13,8 +13,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const callback = (mutationList, observer) => {
         for(const mutation of mutationList){
             if(mutation.type === "childList"){
-                if(targetNode.querySelector("#input-number") || targetNode.querySelector("#input-number-file")){
+                if(targetNode.querySelector("#input-number") || targetNode.querySelector("#input-number-file") || targetNode.querySelector("#input-csv-file")){
                     document.getElementById("num-test-page").style.display = "block";
+                }
+                else{
+                    document.getElementById("num-test-page").style.display = "none";
                 }
             }
         }
@@ -29,13 +32,21 @@ document.addEventListener("DOMContentLoaded", function() {
    testNumberButton.onclick = function() {
         var x_val = document.getElementById('test-x').value;
 
-        if(/[a-z]/.exec(x_val) != null){
-            alert("콤마로 구분된 숫자만 입력 가능합니다");
-            return;
+        if(targetNode.querySelector("#input-number") || targetNode.querySelector("#input-number-file")){
+            if(/[a-z]/.exec(x_val) != null){
+                alert("콤마로 구분된 숫자만 입력 가능합니다");
+                return;
+            }
+            var data = {
+                type: "plain",
+                x: x_val
+            }
         }
-
-        var data = {
-            x: x_val
+        else{
+            var data = {
+                type: "csv",
+                x: x_val
+            }
         }
 
         $.ajax({

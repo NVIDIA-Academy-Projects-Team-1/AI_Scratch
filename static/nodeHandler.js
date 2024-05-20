@@ -47,6 +47,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 // Input CSV file
                 if(targetNode.querySelector("#input-csv-file")){
+                    // alert("CSV파일은 목표값 행이 오른쪽 끝에 위치해야 합니다.")
                     targetNode.querySelector("#csv-file").disabled = false;
                 }
                 else{
