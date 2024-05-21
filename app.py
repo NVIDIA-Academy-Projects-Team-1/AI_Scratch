@@ -40,6 +40,9 @@ vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes = 1000)
 
 losses = []
 
+matplotlib.use("macOSX")
+matplotlib.pyplot.switch_backend('Agg') 
+
 # matplotlib.use('agg')
 
 ## FLASK APP ROUTES ##
@@ -220,8 +223,9 @@ def process_number():
     model = Model(inputs = input, outputs = output)
     model.summary()
 
-    optimizer = keras.optimizers.legacy.Adam()
+    optimizer = keras.optimizers.Adam()
     lossFunc = keras.losses.MeanSquaredError()
+
             
     def train():
         for i in range(10):
@@ -240,7 +244,10 @@ def process_number():
 
             print(f"epoch {i + 1} done, loss {float(loss)}")
             yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f}입니다.\n"
-            
+        
+        plt.plot(losses)
+        plt.savefig('uploads/fig.png')
+
     return Response(train())
 
 
@@ -268,7 +275,7 @@ def process_number_logistic():
     model = Model(inputs = input, outputs = output)
     model.summary()
 
-    optimizer = keras.optimizers.legacy.Adam()
+    optimizer = keras.optimizers.Adam()
     lossFunc = keras.losses.SparseCategoricalCrossentropy(from_logits = True)
     acc = keras.metrics.SparseCategoricalAccuracy()
     
@@ -335,7 +342,7 @@ def process_csv():
         model = Model(inputs = input, outputs = output)
         model.summary()
 
-        optimizer = tf.keras.optimizers.legacy.Adam()
+        optimizer = tf.keras.optimizers.Adam()
         lossFunc = tf.keras.losses.CategoricalCrossentropy()
         acc = tf.keras.metrics.CategoricalAccuracy()
 
@@ -390,7 +397,7 @@ def process_csv():
         model = Model(inputs = input, outputs = output)
         model.summary()
 
-        optimizer = tf.keras.optimizers.legacy.Adam()
+        optimizer = tf.keras.optimizers.Adam()
         lossFunc = tf.keras.losses.MeanSquaredError()
 
         def train():
@@ -482,6 +489,6 @@ def createResponse():
 
 ## RUN FLASK APP ##
 if __name__ == "__main__":
-    app.run(host = '192.168.0.3', port = 5500, debug = True)
+    app.run(debug = True)
     # app.run(host = '192.168.1.122', port = 5500, debug = True)
     
