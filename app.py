@@ -483,5 +483,5 @@ def createResponse():
 ## RUN FLASK APP ##
 if __name__ == "__main__":
     app.run(host = '192.168.0.3', port = 5500, debug = True)
-    app.run(host = '192.168.0.3', port = 5500, debug = True)
+    # app.run(host = '192.168.1.122', port = 5500, debug = True)
     
