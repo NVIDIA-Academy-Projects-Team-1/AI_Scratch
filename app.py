@@ -10,6 +10,7 @@ import cv2 as cv
 import os
 import ollama
 import speech_recognition as sr
+import matplotlib
 import matplotlib.pyplot as plt
 import mpld3
 
@@ -20,9 +21,7 @@ from flask import Flask, render_template, request, jsonify, Response, redirect, 
 from werkzeug.utils import secure_filename
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
-from PIL import Image
-from openai import OpenAI
-from datetime import datetime
+
 
 ## GLOBAL FIELD ##
 app = Flask(__name__)
@@ -39,11 +38,15 @@ encoded_cols = None
 
 vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes = 1000)
 
+losses = []
+
+# matplotlib.use('agg')
 
 ## FLASK APP ROUTES ##
 @app.route("/", methods = ['POST','GET'])
 def init():
     return render_template('index.html')
+
 
 @app.route("/data", methods = ["POST"])
 def fetch_data():
@@ -81,10 +84,8 @@ def fetch_data():
     
     elif data['type'] == 'image':
         image = request.files['img']
-        # print('-------------test',image)
         filename = secure_filename(image.filename)
         upload_img_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        # print(f'---------------------{upload_img_path}-------{image}')
         image.save(upload_img_path)
         return process_image()
     
@@ -177,10 +178,20 @@ def fetch_test_data():
                     yield "입력값이 올바르지 않습니다."
     return Response(pred())
 
+@app.route("/losses", methods=['GET'])
+def get_losses():
+    global losses
+    return jsonify(losses)
+
+@app.route("/plot")
+def plot_loss():
+    return render_template('index.html')
 
 @app.route("/response", methods = ["GET"])
 def process_number():
     global model
+    global losses
+    losses = []
     print('==========process_number called==========')
     print(data)
     print('==========     end of data     ==========')
@@ -214,6 +225,7 @@ def process_number():
             
     def train():
         for i in range(10):
+            epoch_loss = []
             for x, y in dataset:
                 with tf.GradientTape() as tape:
                     logit = model(x, training = True)
@@ -221,10 +233,16 @@ def process_number():
                 
                 grad = tape.gradient(loss, model.trainable_weights)
                 optimizer.apply_gradients(zip(grad, model.trainable_weights))
+                epoch_loss.append(float(loss))
+
+            avg_loss = np.mean(epoch_loss)
+            losses.append(avg_loss)
+
             print(f"epoch {i + 1} done, loss {float(loss)}")
             yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f}입니다.\n"
             
     return Response(train())
+
 
 
 @app.route("/response", methods = ["GET"])
@@ -270,10 +288,9 @@ def process_number_logistic():
             
     return Response(train())
 
-
 @app.route("/response", methods = ["GET"])
 def process_csv():
-    global label, type, model, encoded_cols
+    global label, type, model, encoded_cols, data
 
     csv_data = pd.read_csv(upload_csv_path, header = None, skiprows = [0])
     csv_data = csv_data.dropna(axis = 0)
@@ -286,6 +303,14 @@ def process_csv():
         x = csv_data.iloc[:, :-1]
         y = csv_data.iloc[:, -1]
         label = csv_data.iloc[:, -1].unique()
+
+        units_1 = int(data['units1']) if data['units1'] != '' else 0
+        units_2 = int(data['units2']) if data['units2'] != '' else 0
+        units_3 = int(data['units3']) if data['units3'] != '' else 0
+
+        unit_list = [units_1, units_2, units_3]
+        activation_list = [data['activation1'], data['activation2'], data['activation3']]
+        layer_list = [Dense(units = i, activation = j) for i, j in zip(unit_list, activation_list) if i != 0]
 
         objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
         print("object column : ", objectCol)
@@ -300,8 +325,11 @@ def process_csv():
         print("x shape : ", train_x.shape[1])
 
         input = Input(shape = (train_x.shape[1], ), batch_size = 32)
-        x = Dense(32, activation = "relu")(input)
-        x = Dense(64, activation = "relu")(x)
+        # x = Dense(32, activation = "relu")(input)
+        # x = Dense(64, activation = "relu")(x)
+        x = input
+        for layer in layer_list:
+            x = layer(x)
         output = Dense(train_y.shape[1], activation = "softmax")(x)
 
         model = Model(inputs = input, outputs = output)
@@ -333,6 +361,14 @@ def process_csv():
         x = csv_data.iloc[:, :-1]
         train_y = csv_data.iloc[:, -1]
 
+        units_1 = int(data['units1']) if data['units1'] != '' else 0
+        units_2 = int(data['units2']) if data['units2'] != '' else 0
+        units_3 = int(data['units3']) if data['units3'] != '' else 0
+
+        unit_list = [units_1, units_2, units_3]
+        activation_list = [data['activation1'], data['activation2'], data['activation3']]
+        layer_list = [Dense(units = i, activation = j) for i, j in zip(unit_list, activation_list) if i != 0]
+
         objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
         print("object column : ", objectCol)
         
@@ -344,8 +380,11 @@ def process_csv():
         print("x shape : ", train_x.shape[1])
 
         input = Input(shape = (train_x.shape[1], ), batch_size = 32)
-        x = Dense(32, activation = "relu")(input)
-        x = Dense(64, activation = "relu")(x)
+        # x = Dense(32, activation = "relu")(input)
+        # x = Dense(64, activation = "relu")(x)
+        x = input
+        for layer in layer_list:
+            x = layer(x)
         output = Dense(1)(x)
 
         model = Model(inputs = input, outputs = output)
@@ -363,8 +402,9 @@ def process_csv():
                         
                     grad = tape.gradient(loss, model.trainable_weights)
                     optimizer.apply_gradients(zip(grad, model.trainable_weights))
-
+            
                 print(f"epoch {i + 1} done, loss {float(loss)}")
+
                 yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f} 입니다.\n"
         
         return Response(train())
@@ -390,33 +430,21 @@ def process_image():
 
     pre = vgg16_model.predict(img, verbose = 0)
     result = decode_predictions(pre)[0][0]
-    label = result[1].replace('_', ' ')
+    label = result[1].replace('_', ' ').lower()
     acc = result[2]
     print("result : ", result)
     print("original label : ", label)
 
     response = ollama.chat(model = 'thinkverse/towerinstruct',messages=[
-        # {
-        #     'role' : 'system',
-        #     'content' : 'You are a helpful AI translator translating from English to Korean. You must create response only in Korean language no matter what.',
-        # },
-        # {
-        #     'role' : 'system',
-        #     'content' : 'Translate English label, which is from imagenet dataset label, to Korean in given content.'
-        # },
-        # {
-        #     'role' : 'user',
-        #     'content' : f'{label}',
-        # }
         {
             'role' : 'user',
-            'content' : f'Translate the following text from English into Korean.\nEnglish: {label}.\nKorean:'
+            'content' : f'Translate following text from English into Korean.\nEnglish: Predicted result of image is "{label}", with accuracy of {float(acc * 100):.2f}%.\nKorean:'
         }
     ])
 
     print('generated text: ', response['message']['content'], 'acc: %.2f' % float(acc * 100))
     text = f"예측한 사진의 종류는 {response['message']['content'].replace('.', '')}이고, 예측 정확도는 {float(acc * 100):.2f}% 입니다."
-    return jsonify({'response': text, 'image_path':upload_img_path})
+    return jsonify({'response': response['message']['content'], 'image_path':upload_img_path})
 
 
 @app.route("/response", methods=["GET"])
@@ -454,5 +482,6 @@ def createResponse():
 
 ## RUN FLASK APP ##
 if __name__ == "__main__":
+    app.run(host = '192.168.0.3', port = 5500, debug = True)
     app.run(host = '192.168.0.3', port = 5500, debug = True)
     

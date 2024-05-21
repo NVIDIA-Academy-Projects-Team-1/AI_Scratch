@@ -213,6 +213,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 processData: false,
                 contentType: false,
                 success: (res) => {
+                    console.log(csv_file_val['name'])
                     console.log(res);
 
                     if(res['alert']){
@@ -222,7 +223,8 @@ document.addEventListener("DOMContentLoaded", function() {
     
                     var logDiv = document.getElementById("log");
                     var lines = res.split('\n');
-                    
+                    logDiv.appendChild(document.createTextNode("==" + csv_file_val['name']+ " 파일 학습중입니다.=="));
+                    logDiv.appendChild(document.createElement('br'));
                     lines.forEach(line => {
                         var log = document.createTextNode(line);
                         logDiv.appendChild(log);
@@ -230,6 +232,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     });
     
                     logDiv.appendChild(document.createTextNode("학습이 완료되었습니다."));
+                    logDiv.appendChild(document.createElement('br'));
                     logDiv.appendChild(document.createElement('br'));
                 }
             });
@@ -288,7 +291,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     logDiv.appendChild(userText);
                     logDiv.appendChild(document.createElement('br'));
 
-                    var responseText = document.createTextNode("ollama: " + res.response);
+                    var responseText = document.createTextNode("chat: " + res.response);
                     logDiv.appendChild(responseText);
                     logDiv.appendChild(document.createElement('br'));
                 }
@@ -308,7 +311,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     logDiv.appendChild(userText);
                     logDiv.appendChild(document.createElement('br'));
 
-                    var responseText = document.createTextNode("ollama: " + res.response);
+                    var responseText = document.createTextNode("Chat: " + res.response);
                     logDiv.appendChild(responseText);
                     logDiv.appendChild(document.createElement('br'));
 

@@ -25,6 +25,12 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("layer2").style.display = "none";
         document.getElementById("layer3").style.display = "block";
     }
+    document.getElementById("train-model").addEventListener("click", function() {
+        if (lossesChart) {
+            lossesChart.destroy();
+        }
+        fetchDataAndDrawChart();
+    });
     
     document.getElementById("reset").addEventListener("click", function(){
         console.log("reload");

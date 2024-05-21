@@ -9,14 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Noto+Sans+KR&display=swap" rel="stylesheet">
 </head>
 <body>
-    <script src="{{url_for('static', filename = 'index.js')}}"></script>
-    <script src="{{url_for('static', filename = 'layerHandler.js')}}"></script>
-    <script src="{{url_for('static', filename = 'nodeHandler.js')}}"></script>
-    <script src="{{url_for('static', filename = 'testHandler.js')}}"></script>
-    <script src="{{url_for('static', filename = 'trainModel.js')}}"></script>
-    <script src="{{url_for('static', filename = 'handleResponse.js')}}"></script>
-    <script src="{{url_for('static', filename = 'speechRecognition.js')}}"></script>
-    <!-- <script src="{{url_for('static', filename = 'tooltip.js')}}"></script> -->
+    <script src="{{url_for('static', filename='index.js')}}"></script>
+    <script src="{{url_for('static', filename='layerHandler.js')}}"></script>
+    <script src="{{url_for('static', filename='nodeHandler.js')}}"></script>
+    <script src="{{url_for('static', filename='testHandler.js')}}"></script>
+    <script src="{{url_for('static', filename='trainModel.js')}}"></script>
+    <script src="{{url_for('static', filename='handleResponse.js')}}"></script>
+    <script src="{{url_for('static', filename='speechRecognition.js')}}"></script>
+    <!-- <script src="{{url_for('static', filename='tooltip.js')}}"></script> -->
     <script src="https://raw.githack.com/SortableJS/Sortable/master/Sortable.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 
@@ -154,6 +154,9 @@
     </div>
 
     <!-- SortableJS implementation -->
+
+    <script src="{{url_for('static', filename='chat.js')}}"></script>
+
     <script>
         $(document).ready(function() {
             Sortable.create(layer1, {
