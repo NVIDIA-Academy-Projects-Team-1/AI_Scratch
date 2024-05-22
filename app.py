@@ -13,7 +13,9 @@ import speech_recognition as sr
 import matplotlib
 import matplotlib.pyplot as plt
 import mpld3
+import base64
 
+from matplotlib import rc
 from tensorflow import keras
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Dense
@@ -21,6 +23,7 @@ from flask import Flask, render_template, request, jsonify, Response, redirect, 
 from werkzeug.utils import secure_filename
 from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
+from sklearn.preprocessing import MinMaxScaler
 
 
 ## GLOBAL FIELD ##
@@ -40,8 +43,12 @@ vgg16_model = VGG16(weights = 'imagenet', include_top = True, classes = 1000)
 
 losses = []
 
+scaler = MinMaxScaler()
+
 matplotlib.use("macOSX")
-matplotlib.pyplot.switch_backend('Agg') 
+matplotlib.pyplot.switch_backend('Agg')
+rc('font', family = 'AppleGothic')
+plt.rcParams['axes.unicode_minus'] = False 
 
 # matplotlib.use('agg')
 
@@ -123,9 +130,66 @@ def audio_to_text():
         return jsonify({'error': '인식할 수 없습니다'}), 400
 
 
+# @app.route("/testdata", methods = ["POST"])
+# def fetch_test_data():
+#     global label, type, model, encoded_cols
+#     test_data = request.form
+
+#     if test_data['type'] == 'plain':
+#         x_data = np.array([[float(i)] for i in test_data['x'].split(',')])
+#         x_data = tf.data.Dataset.from_tensor_slices(x_data)
+
+#         def pred():
+#             for x in x_data:
+#                 pred = model.predict(x, verbose = 0)
+#                 print(pred)
+#                 yield f"{x[0]}에 대한 예측값은 {round(float(pred[0][0]))}입니다.\n"
+
+#     elif test_data['type'] == 'csv':
+#         x = pd.DataFrame(test_data['x'].split(',')).T
+#         print(x, x.shape)
+        
+#         if type == 'Linear':
+#             for col in x.columns:
+#                 x[col] = pd.to_numeric(x[col], errors = 'ignore')
+#             print(x.info())
+#             objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+#             print("objectcol len: ", len(objectCol))
+#             if len(objectCol) != 0:
+#                 x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+#                 x = x.reindex(columns = encoded_cols)
+#             @stream_with_context
+#             def pred():
+#                 try:
+#                     pred = model.predict(x, verbose = 0)
+#                     print(pred)
+#                     yield f"{test_data['x']}에 대한 예측값은 {round(float(pred[0][0]))}입니다.\n"
+#                 except:
+#                     yield "입력값이 올바르지 않습니다."
+
+#         elif type == 'Logistic':
+#             for col in x.columns:
+#                 x[col] = pd.to_numeric(x[col], errors = 'ignore')
+#             print(x.info())
+#             objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+#             print("objectcol len: ", len(objectCol))
+#             if len(objectCol) != 0:
+#                 x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+#                 x = x.reindex(columns = encoded_cols)
+#             print("x :\n", x)
+#             @stream_with_context
+#             def pred():
+#                 try:
+#                     pred = model.predict(x, verbose = 0)
+#                     print(pred)
+#                     print(label)
+#                     yield f"{test_data['x']}에 대한 예측값은 {label[np.argmax(pred[0])]}입니다.\n"
+#                 except:
+#                     yield "입력값이 올바르지 않습니다."
+#     return Response(pred())
 @app.route("/testdata", methods = ["POST"])
 def fetch_test_data():
-    global label, type, model, encoded_cols
+    global label, type, model, encoded_cols, scaler
     test_data = request.form
 
     if test_data['type'] == 'plain':
@@ -145,12 +209,21 @@ def fetch_test_data():
         if type == 'Linear':
             for col in x.columns:
                 x[col] = pd.to_numeric(x[col], errors = 'ignore')
-            print(x.info())
-            objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
-            print("objectcol len: ", len(objectCol))
-            if len(objectCol) != 0:
-                x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+
+            object_cols = x.select_dtypes(include='object').columns
+            numeric_cols = x.select_dtypes(include=['int64', 'float64']).columns
+            print("Numeric columns:", numeric_cols)
+            print("objectcol len: ", object_cols)
+
+            if not numeric_cols.empty:
+                x[numeric_cols] = scaler.transform(x[numeric_cols])
+            
+            if len(object_cols) != 0:
+                x = pd.get_dummies(x, prefix = object_cols, columns = object_cols, dtype = int)
                 x = x.reindex(columns = encoded_cols)
+
+            print("Scaled x : ", x)
+
             @stream_with_context
             def pred():
                 try:
@@ -163,13 +236,21 @@ def fetch_test_data():
         elif type == 'Logistic':
             for col in x.columns:
                 x[col] = pd.to_numeric(x[col], errors = 'ignore')
-            print(x.info())
-            objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
-            print("objectcol len: ", len(objectCol))
-            if len(objectCol) != 0:
-                x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+
+            object_cols = x.select_dtypes(include='object').columns
+            numeric_cols = x.select_dtypes(include=['int64', 'float64']).columns
+            print("Numeric columns:", numeric_cols)
+            print("objectcol len: ", object_cols)
+
+            if not numeric_cols.empty:
+                x[numeric_cols] = scaler.transform(x[numeric_cols])
+            
+            if len(object_cols) != 0:
+                x = pd.get_dummies(x, prefix = object_cols, columns = object_cols, dtype = int)
                 x = x.reindex(columns = encoded_cols)
-            print("x :\n", x)
+
+            print("Scaled x : ", x.iloc[0])
+
             @stream_with_context
             def pred():
                 try:
@@ -181,20 +262,21 @@ def fetch_test_data():
                     yield "입력값이 올바르지 않습니다."
     return Response(pred())
 
+
 @app.route("/losses", methods=['GET'])
 def get_losses():
     global losses
     return jsonify(losses)
 
+
 @app.route("/plot")
 def plot_loss():
     return render_template('index.html')
 
+
 @app.route("/response", methods = ["GET"])
 def process_number():
     global model
-    global losses
-    losses = []
     print('==========process_number called==========')
     print(data)
     print('==========     end of data     ==========')
@@ -228,6 +310,7 @@ def process_number():
 
             
     def train():
+        losses = []
         for i in range(10):
             epoch_loss = []
             for x, y in dataset:
@@ -240,16 +323,21 @@ def process_number():
                 epoch_loss.append(float(loss))
 
             avg_loss = np.mean(epoch_loss)
-            losses.append(avg_loss)
+            losses.append(loss)
 
             print(f"epoch {i + 1} done, loss {float(loss)}")
             yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f}입니다.\n"
         
+        plt.clf()
         plt.plot(losses)
-        plt.savefig('uploads/fig.png')
+        plt.xlabel('학습 단계')
+        plt.ylabel('차이값')
+        plt.savefig('uploads/fig.jpg')
+        with open('uploads/fig.jpg', 'rb') as f:
+            base64_img = base64.b64encode(f.read()).decode('utf-8')
+        yield f'plot:{base64_img}'
 
     return Response(train())
-
 
 
 @app.route("/response", methods = ["GET"])
@@ -295,9 +383,156 @@ def process_number_logistic():
             
     return Response(train())
 
+# @app.route("/response", methods = ["GET"])
+# def process_csv():
+#     global label, type, model, encoded_cols, data
+
+#     csv_data = pd.read_csv(upload_csv_path, header = None, skiprows = [0])
+#     csv_data = csv_data.dropna(axis = 0)
+
+#     type = 'Linear' if csv_data.iloc[:, -1].dtype == 'float64' else 'Logistic'
+#     print("Data : ", csv_data.iloc[0], "\nTarget data type : ", csv_data.iloc[:, -1].dtype)
+
+#     ## Train Logistic Regression Dataset ##
+#     if type == 'Logistic':
+#         x = csv_data.iloc[:, :-1]
+#         y = csv_data.iloc[:, -1]
+#         label = csv_data.iloc[:, -1].unique()
+
+#         units_1 = int(data['units1']) if data['units1'] != '' else 0
+#         units_2 = int(data['units2']) if data['units2'] != '' else 0
+#         units_3 = int(data['units3']) if data['units3'] != '' else 0
+
+#         unit_list = [units_1, units_2, units_3]
+#         activation_list = [data['activation1'], data['activation2'], data['activation3']]
+#         layer_list = [Dense(units = i, activation = j) for i, j in zip(unit_list, activation_list) if i != 0]
+
+#         objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+#         print("object column : ", objectCol)
+        
+#         train_x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+#         encoded_cols = train_x.columns
+#         train_y = pd.get_dummies(y, dtype = int)
+
+#         dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y)).shuffle(len(train_x)).batch(32)
+
+#         print("data shape: ", train_x.shape, train_y.shape)
+#         print("x shape : ", train_x.shape[1])
+
+#         input = Input(shape = (train_x.shape[1], ), batch_size = 32)
+#         # x = Dense(32, activation = "relu")(input)
+#         # x = Dense(64, activation = "relu")(x)
+#         x = input
+#         for layer in layer_list:
+#             x = layer(x)
+#         output = Dense(train_y.shape[1], activation = "softmax")(x)
+
+#         model = Model(inputs = input, outputs = output)
+#         model.summary()
+
+#         optimizer = tf.keras.optimizers.Adam()
+#         lossFunc = tf.keras.losses.CategoricalCrossentropy()
+#         acc = tf.keras.metrics.CategoricalAccuracy()
+
+#         def train():
+#             acc_list = []
+#             for i in range(10):
+#                 for x, y in dataset:
+#                     with tf.GradientTape() as tape:
+#                         logit = model(x, training = True)
+#                         loss = lossFunc(y, logit)
+                        
+#                     grad = tape.gradient(loss, model.trainable_weights)
+#                     optimizer.apply_gradients(zip(grad, model.trainable_weights))
+#                     acc.update_state(y, logit)
+
+#                 accuracy = acc.result()
+#                 acc_list.append(accuracy)
+#                 print(f"epoch {i + 1} done, accuracy {float(accuracy) * 100:.4f}%")
+#                 yield f"현재 모델은 {i + 1}번째 학습중이며, 정확도는 {float(accuracy * 100):.2f}% 입니다.\n"
+            
+#             plt.clf()
+#             plt.plot(acc_list)
+#             plt.xlabel('학습 단계')
+#             plt.ylabel('정확도')
+#             plt.savefig('uploads/fig.jpg')
+#             with open('uploads/fig.jpg', 'rb') as f:
+#                 base64_img = base64.b64encode(f.read()).decode('utf-8')
+#             yield f'plot:{base64_img}'
+        
+#         return Response(train())
+
+#     ## Train Linear Regression Dataset ##
+#     elif type == 'Linear':
+#         x = csv_data.iloc[:, :-1]
+#         train_y = csv_data.iloc[:, -1]
+
+#         units_1 = int(data['units1']) if data['units1'] != '' else 0
+#         units_2 = int(data['units2']) if data['units2'] != '' else 0
+#         units_3 = int(data['units3']) if data['units3'] != '' else 0
+
+#         unit_list = [units_1, units_2, units_3]
+#         activation_list = [data['activation1'], data['activation2'], data['activation3']]
+#         layer_list = [Dense(units = i, activation = j) for i, j in zip(unit_list, activation_list) if i != 0]
+
+#         objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
+#         print("object column : ", objectCol)
+        
+#         train_x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+
+#         dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y)).shuffle(len(train_x)).batch(32)
+
+#         print("data shape: ", train_x.shape, train_y.shape)
+#         print("x shape : ", train_x.shape[1])
+
+#         input = Input(shape = (train_x.shape[1], ), batch_size = 32)
+#         # x = Dense(32, activation = "relu")(input)
+#         # x = Dense(64, activation = "relu")(x)
+#         x = input
+#         for layer in layer_list:
+#             x = layer(x)
+#         output = Dense(1)(x)
+
+#         model = Model(inputs = input, outputs = output)
+#         model.summary()
+
+#         optimizer = tf.keras.optimizers.Adam()
+#         lossFunc = tf.keras.losses.MeanSquaredError()
+
+#         def train():
+#             losses = []
+#             for i in range(10):
+#                 for x, y in dataset:
+#                     with tf.GradientTape() as tape:
+#                         logit = model(x, training = True)
+#                         loss = lossFunc(y, logit)
+                        
+#                     grad = tape.gradient(loss, model.trainable_weights)
+#                     optimizer.apply_gradients(zip(grad, model.trainable_weights))
+#                 losses.append(loss)
+#                 print(f"epoch {i + 1} done, loss {float(loss)}")
+
+#                 yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f} 입니다.\n"
+            
+#             plt.clf()
+#             plt.plot(losses)
+#             plt.xlabel('학습 단계')
+#             plt.ylabel('차이값')
+#             plt.savefig('uploads/fig.jpg')
+#             with open('uploads/fig.jpg', 'rb') as f:
+#                 base64_img = base64.b64encode(f.read()).decode('utf-8')
+#             yield f'plot:{base64_img}'
+
+#         return Response(train())
+
+#     ## Error classifying ##
+#     else:
+#         print("Failed to classify dataset with target type: ", type)
+#         return jsonify({"alert": "CSV파일 읽기에 실패했습니다."})
+
 @app.route("/response", methods = ["GET"])
 def process_csv():
-    global label, type, model, encoded_cols, data
+    global label, type, model, encoded_cols, data, scaler
 
     csv_data = pd.read_csv(upload_csv_path, header = None, skiprows = [0])
     csv_data = csv_data.dropna(axis = 0)
@@ -319,21 +554,28 @@ def process_csv():
         activation_list = [data['activation1'], data['activation2'], data['activation3']]
         layer_list = [Dense(units = i, activation = j) for i, j in zip(unit_list, activation_list) if i != 0]
 
-        objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
-        print("object column : ", objectCol)
-        
-        train_x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
-        encoded_cols = train_x.columns
-        train_y = pd.get_dummies(y, dtype = int)
+        object_cols = x.select_dtypes(include='object').columns
+        numeric_cols = x.select_dtypes(include=['int64', 'float64']).columns
 
+        print("Object columns:", object_cols)
+        print("Numeric columns:", numeric_cols)
+
+        train_x = pd.get_dummies(x, columns=object_cols, dtype=int)
+
+        if not numeric_cols.empty:
+            train_x[numeric_cols] = scaler.fit_transform(x[numeric_cols])
+        
+        print("X dataset after scaling : ", train_x.iloc[0])
+
+        encoded_cols = train_x.columns
+
+        train_y = pd.get_dummies(y, dtype=int)
         dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y)).shuffle(len(train_x)).batch(32)
 
         print("data shape: ", train_x.shape, train_y.shape)
         print("x shape : ", train_x.shape[1])
 
         input = Input(shape = (train_x.shape[1], ), batch_size = 32)
-        # x = Dense(32, activation = "relu")(input)
-        # x = Dense(64, activation = "relu")(x)
         x = input
         for layer in layer_list:
             x = layer(x)
@@ -347,6 +589,7 @@ def process_csv():
         acc = tf.keras.metrics.CategoricalAccuracy()
 
         def train():
+            acc_list = []
             for i in range(10):
                 for x, y in dataset:
                     with tf.GradientTape() as tape:
@@ -358,8 +601,18 @@ def process_csv():
                     acc.update_state(y, logit)
 
                 accuracy = acc.result()
+                acc_list.append(accuracy)
                 print(f"epoch {i + 1} done, accuracy {float(accuracy) * 100:.4f}%")
                 yield f"현재 모델은 {i + 1}번째 학습중이며, 정확도는 {float(accuracy * 100):.2f}% 입니다.\n"
+            
+            plt.clf()
+            plt.plot(acc_list)
+            plt.xlabel('학습 단계')
+            plt.ylabel('정확도')
+            plt.savefig('uploads/fig.jpg')
+            with open('uploads/fig.jpg', 'rb') as f:
+                base64_img = base64.b64encode(f.read()).decode('utf-8')
+            yield f'plot:{base64_img}'
         
         return Response(train())
 
@@ -376,10 +629,20 @@ def process_csv():
         activation_list = [data['activation1'], data['activation2'], data['activation3']]
         layer_list = [Dense(units = i, activation = j) for i, j in zip(unit_list, activation_list) if i != 0]
 
-        objectCol = [x.columns.get_loc(col) for col in x.dtypes[x.dtypes == 'object'].index]
-        print("object column : ", objectCol)
+        object_cols = x.select_dtypes(include='object').columns
+        numeric_cols = x.select_dtypes(include=['int64', 'float64']).columns
+
+        print("Object columns:", object_cols)
+        print("Numeric columns:", numeric_cols)
+
+        train_x = pd.get_dummies(x, columns=object_cols, dtype=int)
+
+        if not numeric_cols.empty:
+            train_x[numeric_cols] = scaler.fit_transform(x[numeric_cols])
         
-        train_x = pd.get_dummies(x, prefix = objectCol, columns = objectCol, dtype = int)
+        print("X dataset after scaling : ", train_x.iloc[0])
+
+        encoded_cols = train_x.columns
 
         dataset = tf.data.Dataset.from_tensor_slices((train_x, train_y)).shuffle(len(train_x)).batch(32)
 
@@ -387,8 +650,6 @@ def process_csv():
         print("x shape : ", train_x.shape[1])
 
         input = Input(shape = (train_x.shape[1], ), batch_size = 32)
-        # x = Dense(32, activation = "relu")(input)
-        # x = Dense(64, activation = "relu")(x)
         x = input
         for layer in layer_list:
             x = layer(x)
@@ -401,6 +662,7 @@ def process_csv():
         lossFunc = tf.keras.losses.MeanSquaredError()
 
         def train():
+            losses = []
             for i in range(10):
                 for x, y in dataset:
                     with tf.GradientTape() as tape:
@@ -409,11 +671,20 @@ def process_csv():
                         
                     grad = tape.gradient(loss, model.trainable_weights)
                     optimizer.apply_gradients(zip(grad, model.trainable_weights))
-            
+                losses.append(loss)
                 print(f"epoch {i + 1} done, loss {float(loss)}")
 
                 yield f"현재 모델은 {i + 1}번째 학습중이며, 목표값과의 차이는 {float(loss):.2f} 입니다.\n"
-        
+            
+            plt.clf()
+            plt.plot(losses)
+            plt.xlabel('학습 단계')
+            plt.ylabel('차이값')
+            plt.savefig('uploads/fig.jpg')
+            with open('uploads/fig.jpg', 'rb') as f:
+                base64_img = base64.b64encode(f.read()).decode('utf-8')
+            yield f'plot:{base64_img}'
+
         return Response(train())
 
     ## Error classifying ##
@@ -489,6 +760,7 @@ def createResponse():
 
 ## RUN FLASK APP ##
 if __name__ == "__main__":
-    app.run(debug = True)
+    app.run(host = '192.168.0.3', port = 5500, debug = True)
     # app.run(host = '192.168.1.122', port = 5500, debug = True)
+    # app.run(debug = True)
     

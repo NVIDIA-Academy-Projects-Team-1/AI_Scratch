@@ -142,9 +142,23 @@ document.addEventListener("DOMContentLoaded", function() {
                     var lines = res.split('\n');
                     
                     lines.forEach(line => {
-                        var log = document.createTextNode(line);
-                        logDiv.appendChild(log);
-                        logDiv.appendChild(document.createElement('br'));
+                        if(line.startsWith('plot')){
+                            console.log("plot image called")
+                            logDiv.appendChild(document.createTextNode("== 학습 루프별 차이값 그래프 =="));
+                            logDiv.appendChild(document.createElement('br'));
+                            var img = document.createElement('img');
+                            img.src = 'data:image/jpeg;base64,' + line.split(':')[1];
+                            img.style.width = '100%';
+                            img.style.height = 'auto';
+                            logDiv.appendChild(img);
+                            logDiv.appendChild(document.createElement('br'));
+                        }
+                        else{
+                            var log = document.createTextNode(line);
+                            logDiv.appendChild(log);
+                            logDiv.appendChild(document.createElement('br'));
+                        }
+                        
                     });
     
                     logDiv.appendChild(document.createTextNode("학습이 완료되었습니다."));
@@ -226,9 +240,23 @@ document.addEventListener("DOMContentLoaded", function() {
                     logDiv.appendChild(document.createTextNode("==" + csv_file_val['name']+ " 파일 학습중입니다.=="));
                     logDiv.appendChild(document.createElement('br'));
                     lines.forEach(line => {
-                        var log = document.createTextNode(line);
-                        logDiv.appendChild(log);
-                        logDiv.appendChild(document.createElement('br'));
+                        if(line.startsWith('plot')){
+                            console.log("plot image called")
+                            logDiv.appendChild(document.createTextNode("== 학습 루프별 차이값/정확도 그래프 =="));
+                            logDiv.appendChild(document.createElement('br'));
+                            var img = document.createElement('img');
+                            img.src = 'data:image/jpeg;base64,' + line.split(':')[1];
+                            img.style.width = '100%';
+                            img.style.height = 'auto';
+                            logDiv.appendChild(img);
+                            logDiv.appendChild(document.createElement('br'));
+                        }
+                        else{
+                            var log = document.createTextNode(line);
+                            logDiv.appendChild(log);
+                            logDiv.appendChild(document.createElement('br'));
+                        }
+
                     });
     
                     logDiv.appendChild(document.createTextNode("학습이 완료되었습니다."));
